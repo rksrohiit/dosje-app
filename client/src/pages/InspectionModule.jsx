@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import InspectionCard from '../components/InspectionCard';
 import RouteOptimizer from '../components/RouteOptimizer';
-import { Camera, MapPin, CheckCircle, BrainCircuit, ShieldCheck, Sparkles, RefreshCw, Upload, Navigation } from 'lucide-react';
+import EXIFVerificationModal from '../components/EXIFVerificationModal';
+import { Camera, MapPin, CheckCircle, BrainCircuit, ShieldCheck, Sparkles, RefreshCw, Upload, Navigation, ShieldAlert } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCurrentLocation } from '../utils/geoUtils';
 import { api } from '../utils/api';
@@ -13,6 +14,7 @@ const InspectionModule = () => {
   const [activeInspection, setActiveInspection] = useState(null);
   const [location, setLocation] = useState(null);
   const [aiResult, setAiResult] = useState(null);
+  const [showExifModal, setShowExifModal] = useState(false);
 
   const fetchInspections = async () => {
     setLoading(true);
@@ -96,6 +98,12 @@ const InspectionModule = () => {
   if (activeInspection) {
     return (
       <div className="max-w-3xl mx-auto bg-white rounded-2xl shadow-sm border border-slate-200 p-5 md:p-8 space-y-6">
+        <EXIFVerificationModal
+          isOpen={showExifModal}
+          onClose={() => setShowExifModal(false)}
+          photoName="field_photo_01.jpg"
+        />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
           <div>
@@ -157,17 +165,29 @@ const InspectionModule = () => {
           </div>
 
           <div className="space-y-3">
-            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1">
-              3. Geo-Tagged Photo Evidence
-            </h3>
-            <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center bg-slate-50 hover:bg-slate-100/80 transition-all cursor-pointer">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-1">
+              <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
+                3. Geo-Tagged Photo Evidence & EXIF Audit
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowExifModal(true)}
+                className="text-[11px] font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200 flex items-center gap-1"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" /> Run EXIF Fraud Check
+              </button>
+            </div>
+
+            <div
+              onClick={() => setShowExifModal(true)}
+              className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center bg-slate-50 hover:bg-slate-100/80 transition-all cursor-pointer"
+            >
               <Camera className="w-8 h-8 text-blue-500 mx-auto mb-2" />
               <p className="text-xs font-bold text-slate-700">Capture or Upload Live Field Evidence</p>
-              <p className="text-[10px] text-slate-400 mt-1">Photos are automatically timestamped and GPS-stamped</p>
-              <input type="file" accept="image/*" multiple className="hidden" id="photo-upload" />
-              <label htmlFor="photo-upload" className="mt-3 inline-flex items-center gap-1.5 bg-white border border-slate-300 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50 cursor-pointer">
-                <Upload className="w-3.5 h-3.5" /> Attach Field Photos
-              </label>
+              <p className="text-[10px] text-slate-400 mt-1">AI automatically checks GPS EXIF metadata and detects tampered/downloaded photos</p>
+              <span className="mt-3 inline-flex items-center gap-1.5 bg-white border border-slate-300 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50">
+                <Upload className="w-3.5 h-3.5" /> Attach Field Photo (Run EXIF Fraud Check)
+              </span>
             </div>
           </div>
 

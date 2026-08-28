@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import AttendanceChart from '../components/AttendanceChart';
-import { Sparkles, AlertTriangle, ShieldCheck, Activity } from 'lucide-react';
+import CCTVHeadcountAnalyzer from '../components/CCTVHeadcountAnalyzer';
+import { Sparkles, AlertTriangle, ShieldCheck, Activity, ShieldAlert, BarChart3 } from 'lucide-react';
 import { api } from '../utils/api';
 import toast from 'react-hot-toast';
 
@@ -9,6 +10,13 @@ const Analytics = () => {
   const [anomalies, setAnomalies] = useState([
     { id: 1, ngo_name: 'Mumbai Support - DAP Scheme', anomaly_score: 0.8, issue: 'Consistently reported 90 attendance vs 50 verified attendance for last 7 days.' },
     { id: 2, ngo_name: 'Jaipur Trust - SMILE Scheme', anomaly_score: 0.6, issue: 'Pre-inspection attendance spike of 45% detected by AI model.' },
+  ]);
+
+  const [fraudRisks, setFraudRisks] = useState([
+    { id: '1', name: 'Mumbai Support - DAP Scheme', state: 'Maharashtra', score: 88, tier: 'CRITICAL', action: 'Freeze Grant & Dispatch Emergency Inspection', variance: '38.2%' },
+    { id: '2', name: 'Bhopal Outreach - DAP Scheme', state: 'Madhya Pradesh', score: 76, tier: 'CRITICAL', action: 'Freeze Grant Disbursement', variance: '29.5%' },
+    { id: '3', name: 'Jaipur Trust - SMILE Scheme', state: 'Rajasthan', score: 62, tier: 'HIGH', action: 'Require Live CCTV Stream Audit', variance: '21.0%' },
+    { id: '4', name: 'Delhi NGO - SMILE Scheme', state: 'Delhi', score: 28, tier: 'LOW', action: 'Routine Monitoring', variance: '4.1%' },
   ]);
 
   useEffect(() => {
@@ -38,11 +46,75 @@ const Analytics = () => {
             <Sparkles className="w-4 h-4" /> AI Predictive Analytics Engine
           </div>
           <h2 className="text-xl md:text-2xl font-black text-white">
-            Anomaly Detection & Attendance Analytics
+            AI Vision & NGO Fraud Risk Indexing Engine
           </h2>
-          <p className="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">
-            Machine learning model comparing reported attendance against CCTV face counts to eliminate ghost beneficiaries.
+          <p className="text-xs md:text-sm text-slate-300 mt-1 max-w-2xl">
+            Multi-variable machine learning scoring attendance variance, budget claims, EXIF metadata, and audit failure rates.
           </p>
+        </div>
+      </div>
+
+      {/* CCTV Headcount Analyzer Overlay */}
+      <CCTVHeadcountAnalyzer cameraName="Delhi NGO Main Dining Hall Feed" reportedCount={50} />
+
+      {/* NGO Fraud Risk Indexing Engine Table */}
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-5 md:p-6 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <span className="px-2.5 py-0.5 rounded text-[10px] font-black bg-rose-100 text-rose-800 uppercase tracking-widest">
+              AI Risk Matrix
+            </span>
+            <h3 className="text-base md:text-lg font-black text-slate-900 flex items-center gap-2 mt-1">
+              <ShieldAlert className="w-5 h-5 text-rose-600" />
+              NGO Fraud Risk Indexing Leaderboard
+            </h3>
+          </div>
+          <span className="text-xs font-bold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg self-start sm:self-auto">
+            Algorithm Version 3.4
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse min-w-[650px]">
+            <thead>
+              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
+                <th className="p-3.5">NGO / Institute Name</th>
+                <th className="p-3.5">State</th>
+                <th className="p-3.5">Fraud Risk Index</th>
+                <th className="p-3.5">Risk Tier</th>
+                <th className="p-3.5">Recommended AI Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs md:text-sm">
+              {fraudRisks.map((item) => (
+                <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                  <td className="p-3.5 font-bold text-slate-900">{item.name}</td>
+                  <td className="p-3.5 font-semibold text-slate-600">{item.state}</td>
+                  <td className="p-3.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-20 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${item.score >= 75 ? 'bg-rose-600' : (item.score >= 50 ? 'bg-amber-500' : 'bg-emerald-500')}`}
+                          style={{ width: `${item.score}%` }}
+                        ></div>
+                      </div>
+                      <span className="font-mono font-black text-slate-900">{item.score}/100</span>
+                    </div>
+                  </td>
+                  <td className="p-3.5">
+                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider ${
+                      item.tier === 'CRITICAL' ? 'bg-rose-100 text-rose-800 border border-rose-300' : (
+                        item.tier === 'HIGH' ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                      )
+                    }`}>
+                      {item.tier}
+                    </span>
+                  </td>
+                  <td className="p-3.5 text-xs font-semibold text-slate-700">{item.action}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -77,47 +149,6 @@ const Analytics = () => {
               </div>
             ))}
           </div>
-        </div>
-      </div>
-
-      {/* High-Risk Anomalies Section */}
-      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-5 md:p-6">
-        <h3 className="text-base md:text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
-          <AlertTriangle className="text-rose-600 w-5 h-5" />
-          Flagged High-Risk Anomalies (Requires Field Verification)
-        </h3>
-
-        <div className="space-y-4">
-          {anomalies.map((a, idx) => {
-            const scorePercent = Math.round((a.anomaly_score || 0.8) * 100);
-            return (
-              <div key={a.id || idx} className="p-4 border border-rose-200 bg-rose-50/60 rounded-xl space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                  <h4 className="font-bold text-sm text-rose-950">{a.ngo_name || a.ngo}</h4>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-rose-800">Anomaly Index:</span>
-                    <div className="w-28 h-2.5 bg-rose-200 rounded-full overflow-hidden">
-                      <div className="h-full bg-rose-600 rounded-full" style={{ width: `${scorePercent}%` }}></div>
-                    </div>
-                    <span className="text-xs font-black text-rose-700">{scorePercent}%</span>
-                  </div>
-                </div>
-
-                <p className="text-xs text-rose-800 font-medium leading-relaxed">
-                  {a.issue || 'Significant variance detected between reported attendance and verified physical headcount.'}
-                </p>
-
-                <div className="pt-1">
-                  <button
-                    onClick={() => toast.success(`Surprise Inspection Dispatched for ${a.ngo_name || 'NGO'}`)}
-                    className="text-xs bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-xs"
-                  >
-                    Dispatch Surprise PMU Inspection
-                  </button>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </div>
     </div>
