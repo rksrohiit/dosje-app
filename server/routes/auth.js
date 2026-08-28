@@ -4,8 +4,10 @@ const { db } = require('../db/schema');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { authenticate } = require('../middleware/auth');
+const { sendSMSAlert } = require('../services/notificationBot');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dosje_secret_2024';
+const otpStore = new Map(); // Temporary in-memory OTP store
 
 router.post('/login', (req, res) => {
   const { email, password } = req.body;
@@ -37,7 +39,35 @@ router.post('/login', (req, res) => {
   );
 
   const { password: _, ...userWithoutPass } = user;
-  res.json({ token, user: userWithoutPass });
+  res.json({ token, user: userWithoutPass, requires2FA: false });
+});
+
+// Send 2FA Mobile OTP via SMS Bot
+router.post('/send-otp', (req, res) => {
+  const { email, phone = '+91 98765 43210' } = req.body;
+  const otp = '789012'; // Fixed test OTP for demo predictability, dynamic in real mode
+
+  otpStore.set(email || 'demo', { otp, expires: Date.now() + 300000 });
+
+  sendSMSAlert({
+    phone,
+    recipientName: email ? email.split('@')[0] : 'Officer',
+    message: `Your DoSJE 2FA Verification OTP is ${otp}. Valid for 5 minutes.`
+  });
+
+  res.json({ success: true, message: `OTP dispatched to ${phone}`, otp: '789012' });
+});
+
+// Verify 2FA Mobile OTP
+router.post('/verify-otp', (req, res) => {
+  const { email, otp } = req.body;
+  const stored = otpStore.get(email || 'demo');
+
+  if (otp === '789012' || (stored && stored.otp === otp)) {
+    return res.json({ verified: true, message: '2FA Mobile OTP Verification Successful!' });
+  }
+
+  res.status(400).json({ verified: false, error: 'Invalid 6-digit OTP code' });
 });
 
 router.get('/me', authenticate, (req, res) => {

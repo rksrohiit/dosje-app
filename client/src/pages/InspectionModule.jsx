@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import InspectionCard from '../components/InspectionCard';
-import { Camera, MapPin, CheckCircle, BrainCircuit, ShieldCheck, Sparkles, RefreshCw, Upload } from 'lucide-react';
+import RouteOptimizer from '../components/RouteOptimizer';
+import { Camera, MapPin, CheckCircle, BrainCircuit, ShieldCheck, Sparkles, RefreshCw, Upload, Navigation } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCurrentLocation } from '../utils/geoUtils';
 import { api } from '../utils/api';
@@ -212,6 +213,18 @@ const InspectionModule = () => {
         </button>
 
         <button
+          onClick={() => setActiveTab('route_optimizer')}
+          className={`px-5 py-3 font-bold text-xs md:text-sm transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'route_optimizer'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <Navigation className="w-4 h-4 text-blue-600" />
+          TSP Route Optimizer & Calendar
+        </button>
+
+        <button
           onClick={() => setActiveTab('ai_assign')}
           className={`px-5 py-3 font-bold text-xs md:text-sm transition-all border-b-2 flex items-center gap-2 ${
             activeTab === 'ai_assign'
@@ -224,7 +237,7 @@ const InspectionModule = () => {
         </button>
       </div>
 
-      {activeTab === 'my_assignments' ? (
+      {activeTab === 'my_assignments' && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {inspections.map((ins) => (
             <InspectionCard
@@ -235,7 +248,13 @@ const InspectionModule = () => {
             />
           ))}
         </div>
-      ) : (
+      )}
+
+      {activeTab === 'route_optimizer' && (
+        <RouteOptimizer />
+      )}
+
+      {activeTab === 'ai_assign' && (
         <div className="bg-gradient-to-br from-purple-900 via-slate-900 to-indigo-950 rounded-2xl p-6 md:p-10 text-white text-center max-w-2xl mx-auto shadow-xl border border-purple-800/40 space-y-5">
           <div className="w-16 h-16 rounded-full bg-purple-500/20 border border-purple-400/40 flex items-center justify-center mx-auto text-purple-300">
             <BrainCircuit className="w-9 h-9" />

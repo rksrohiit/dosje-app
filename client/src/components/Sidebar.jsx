@@ -11,7 +11,7 @@ import {
   Building2,
   LogOut,
   X,
-  ShieldAlert
+  MessageSquare
 } from 'lucide-react';
 
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
@@ -24,6 +24,7 @@ const Sidebar = ({ mobileOpen, setMobileOpen }) => {
     { path: '/inspections', name: 'Inspection Module', icon: ClipboardCheck, roles: ['admin', 'pmu', 'ngo'] },
     { path: '/reports', name: 'Inspection Reports', icon: FileText, roles: ['admin', 'pmu'] },
     { path: '/analytics', name: 'AI Analytics', icon: BarChart2, roles: ['admin'] },
+    { path: '/communications', name: 'Bot Alerts & Grants', icon: MessageSquare, roles: ['admin', 'pmu'] },
     { path: '/ngo-portal', name: 'NGO Portal', icon: Building2, roles: ['ngo', 'beneficiary'] },
   ];
 

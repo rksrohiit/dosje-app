@@ -14,6 +14,7 @@ import InspectionModule from './pages/InspectionModule';
 import Reports from './pages/Reports';
 import Analytics from './pages/Analytics';
 import NGOPortal from './pages/NGOPortal';
+import CommunicationHub from './pages/CommunicationHub';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -96,6 +97,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Layout><Analytics /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/communications"
+        element={
+          <PrivateRoute>
+            <Layout><CommunicationHub /></Layout>
           </PrivateRoute>
         }
       />
