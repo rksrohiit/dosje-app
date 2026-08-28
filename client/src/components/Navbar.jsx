@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Bell, Menu, Radio, Shield } from 'lucide-react';
+import { Bell, Menu, Radio, Globe } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const Navbar = ({ setMobileOpen }) => {
   const location = useLocation();
   const { user } = useAuth();
+  const { language, toggleLanguage, t } = useLanguage();
   const [time, setTime] = useState(new Date());
 
   useEffect(() => {
@@ -15,14 +17,15 @@ const Navbar = ({ setMobileOpen }) => {
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path === '/') return 'Real-Time Monitoring Dashboard';
-    if (path === '/cctv') return 'Live CCTV Surveillance';
-    if (path === '/video-conference') return 'Random Video Conferencing';
-    if (path === '/inspections') return 'PMU Inspection Module';
-    if (path === '/reports') return 'Inspection Reports';
-    if (path === '/analytics') return 'AI Anomaly Analytics';
-    if (path === '/ngo-portal') return 'NGO Management Portal';
-    return 'DoSJE Portal';
+    if (path === '/') return t('nav_dashboard');
+    if (path === '/cctv') return t('nav_cctv');
+    if (path === '/video-conference') return t('nav_video_conference');
+    if (path === '/inspections') return t('nav_inspections');
+    if (path === '/reports') return t('nav_reports');
+    if (path === '/analytics') return t('nav_analytics');
+    if (path === '/communications') return t('nav_bot_alerts');
+    if (path === '/ngo-portal') return t('nav_ngo_portal');
+    return t('portal_title');
   };
 
   return (
@@ -50,7 +53,7 @@ const Navbar = ({ setMobileOpen }) => {
               {getPageTitle()}
             </h1>
             <p className="text-[11px] text-slate-500 hidden sm:block">
-              Dept. of Social Justice & Empowerment • Govt of India
+              {t('dept_name')} • {t('govt_india')}
             </p>
           </div>
         </div>
@@ -58,11 +61,21 @@ const Navbar = ({ setMobileOpen }) => {
         {/* Center Section: LIVE Stream Indicator */}
         <div className="hidden lg:flex items-center gap-2 bg-emerald-50 text-emerald-700 border border-emerald-200 px-3 py-1 rounded-full text-xs font-semibold shadow-2xs">
           <Radio className="w-3.5 h-3.5 text-emerald-600 animate-pulse" />
-          <span>Real-time Monitoring Active</span>
+          <span>{t('live_monitoring')}</span>
         </div>
 
-        {/* Right Section: Time + Notification + User Initials */}
-        <div className="flex items-center gap-3 md:gap-5">
+        {/* Right Section: Language Switcher + Time + Notification + User Initials */}
+        <div className="flex items-center gap-2 md:gap-4">
+          {/* 1-Click Language Switcher (English / हिन्दी) */}
+          <button
+            onClick={toggleLanguage}
+            className="flex items-center gap-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 px-2.5 py-1 rounded-xl text-xs font-bold transition-all shadow-2xs"
+            title="Switch Language / भाषा बदलें"
+          >
+            <Globe className="w-3.5 h-3.5 text-blue-600" />
+            <span>{language === 'en' ? 'हिन्दी' : 'English'}</span>
+          </button>
+
           {/* Real-time Clock */}
           <div className="hidden sm:block text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded border border-slate-200">
             {time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}

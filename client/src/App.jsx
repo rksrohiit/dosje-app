@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
+import { LanguageProvider } from './context/LanguageContext';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -125,9 +126,11 @@ function App() {
   return (
     <AuthProvider>
       <SocketProvider>
-        <AppRoutes />
-        <PWAInstallPrompt />
-        <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+        <LanguageProvider>
+          <AppRoutes />
+          <PWAInstallPrompt />
+          <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
+        </LanguageProvider>
       </SocketProvider>
     </AuthProvider>
   );
