@@ -3,6 +3,7 @@ const router = express.Router();
 const { db } = require('../db/schema');
 const { authenticate, authorize } = require('../middleware/auth');
 const { v4: uuidv4 } = require('uuid');
+const { sendAnomalyAlertEmail } = require('../services/emailService');
 
 router.get('/', authenticate, (req, res) => {
   const ngos = db.prepare(`
@@ -35,16 +36,41 @@ router.post('/:id/attendance', authenticate, (req, res) => {
   const { date, reported_count, verified_count } = req.body;
   const ngo_id = req.params.id;
 
+  const ngo = db.prepare('SELECT name, state FROM ngos WHERE id = ?').get(ngo_id);
+  const ngoName = ngo ? ngo.name : 'Monitored NGO';
+
   let anomaly_score = 0;
   if (reported_count > verified_count * 1.2) {
     anomaly_score = 0.8;
     const alertId = uuidv4();
+    const alertMsg = `High attendance discrepancy detected: ${reported_count} reported vs ${verified_count} verified.`;
+    
     db.prepare('INSERT INTO alerts (id, type, ngo_id, message, severity, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(
-      alertId, 'attendance', ngo_id, 'High anomaly in attendance detected', 'high', new Date().toISOString()
+      alertId, 'attendance', ngo_id, alertMsg, 'high', new Date().toISOString()
     );
+
+    // Socket real-time broadcast
     if (req.io) {
-      req.io.to('dashboard').emit('new_alert', { id: alertId, type: 'attendance', ngo_id });
+      req.io.to('dashboard').emit('new_alert', {
+        id: alertId,
+        type: 'attendance',
+        ngo_id,
+        ngo_name: ngoName,
+        message: alertMsg,
+        severity: 'high',
+        created_at: new Date().toISOString()
+      });
     }
+
+    // Trigger Email Notification
+    sendAnomalyAlertEmail({
+      ngoName,
+      type: 'Attendance Discrepancy (Ghost Beneficiaries)',
+      message: alertMsg,
+      severity: 'HIGH',
+      location: ngo?.state || 'India',
+      date: new Date().toLocaleString()
+    });
   }
 
   const id = uuidv4();
