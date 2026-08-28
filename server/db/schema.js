@@ -2,7 +2,11 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const fs = require('fs');
 
-const dbPath = path.join(__dirname, 'database.sqlite');
+const isVercel = Boolean(process.env.VERCEL);
+const dbPath = isVercel
+  ? path.join('/tmp', 'database.sqlite')
+  : path.join(__dirname, 'database.sqlite');
+
 const db = new Database(dbPath);
 
 function initDB() {
@@ -117,6 +121,17 @@ function initDB() {
       beneficiary_count INTEGER
     );
   `);
+
+  // Auto-seed if empty (e.g. cold start in serverless environment)
+  const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+  if (userCount === 0) {
+    try {
+      const { seed } = require('./seed');
+      seed();
+    } catch (e) {
+      console.log('Auto-seed skipped or failed:', e.message);
+    }
+  }
 }
 
 module.exports = { db, initDB };

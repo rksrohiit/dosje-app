@@ -59,7 +59,7 @@ async function seed() {
       const date = new Date(today);
       date.setDate(date.getDate() - d);
       const reported = 50 + Math.floor(Math.random() * 20);
-      const verified = reported - Math.floor(Math.random() * (d % 7 === 0 ? 10 : 3)); // anomalies on some days
+      const verified = reported - Math.floor(Math.random() * (d % 7 === 0 ? 10 : 3));
       const anomaly = (reported > verified * 1.2) ? 0.8 : 0.1;
       insertAttendance.run(uuidv4(), `ngo${i+1}`, date.toISOString().split('T')[0], reported, verified, anomaly, 'u3', new Date().toISOString());
     }
@@ -86,4 +86,8 @@ async function seed() {
   console.log('Database seeded successfully!');
 }
 
-seed();
+if (require.main === module) {
+  seed();
+}
+
+module.exports = { seed };
