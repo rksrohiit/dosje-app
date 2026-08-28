@@ -24,7 +24,6 @@ services:
   - type: web
     name: dosje-client
     env: static
-    region: singapore
     plan: free
     rootDir: client
     buildCommand: npm ci && npm run build
