@@ -15,7 +15,7 @@ apiInstance.interceptors.request.use((config) => {
 apiInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 401 && !error.config?.url?.includes('/auth/login')) {
       localStorage.removeItem('dosje_token');
       window.location.href = '/login';
     }
@@ -30,8 +30,8 @@ export const api = {
   },
   dashboard: {
     getStats: () => apiInstance.get('/dashboard/stats'),
-    getMapData: () => apiInstance.get('/dashboard/map'),
-    getRecentActivity: () => apiInstance.get('/dashboard/activity'),
+    getMapData: () => apiInstance.get('/dashboard/map-data'),
+    getRecentActivity: () => apiInstance.get('/dashboard/recent-activity'),
   },
   ngos: {
     getAll: () => apiInstance.get('/ngos'),
@@ -45,8 +45,8 @@ export const api = {
     getById: (id) => apiInstance.get(`/inspections/${id}`),
     assign: (data) => apiInstance.post('/inspections/assign', data),
     aiAssign: () => apiInstance.post('/inspections/ai-assign'),
-    start: (id, data) => apiInstance.post(`/inspections/${id}/start`, data),
-    complete: (id, data) => apiInstance.post(`/inspections/${id}/complete`, data),
+    start: (id, data) => apiInstance.put(`/inspections/${id}/start`, data),
+    complete: (id, data) => apiInstance.put(`/inspections/${id}/complete`, data),
   },
   reports: {
     getAll: () => apiInstance.get('/reports'),

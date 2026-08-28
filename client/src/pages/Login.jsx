@@ -19,17 +19,32 @@ const Login = () => {
   ];
 
   const handleLogin = async (e, demoEmail, demoPass) => {
-    e?.preventDefault();
+    if (e) e.preventDefault();
+    const targetEmail = demoEmail || email;
+    const targetPass = demoPass || password;
+
+    if (!targetEmail || !targetPass) {
+      toast.error('Please enter email and password');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await login(demoEmail || email, demoPass || password);
+      await login(targetEmail, targetPass);
       toast.success('Login successful!');
       navigate('/');
     } catch (error) {
-      toast.error('Login failed. Please check credentials.');
+      console.error('Login error:', error);
+      toast.error('Login failed. Please check credentials or backend server.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleDemoClick = (user) => {
+    setEmail(user.email);
+    setPassword(user.password);
+    handleLogin(null, user.email, user.password);
   };
 
   return (
@@ -83,15 +98,16 @@ const Login = () => {
                 <div className="w-full border-t border-gray-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Demo Accounts</span>
+                <span className="px-2 bg-white text-gray-500">1-Click Demo Login</span>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-3">
               {demoUsers.map((u) => (
                 <button
                   key={u.email}
-                  onClick={() => handleLogin(null, u.email, u.password)}
-                  className="text-xs font-medium py-2 px-3 border border-gray-300 rounded hover:bg-blue-50 hover:border-blue-400 text-gray-700 transition-colors"
+                  type="button"
+                  onClick={() => handleDemoClick(u)}
+                  className="text-xs font-medium py-2.5 px-3 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-400 text-gray-700 transition-colors text-center"
                 >
                   {u.label}
                 </button>
