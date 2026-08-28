@@ -7,6 +7,7 @@ import { LanguageProvider } from './context/LanguageContext';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import SOSDistressButton from './components/SOSDistressButton';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import CCTVViewer from './pages/CCTVViewer';
@@ -129,6 +130,7 @@ function App() {
         <LanguageProvider>
           <AppRoutes />
           <PWAInstallPrompt />
+          <SOSDistressButton />
           <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
         </LanguageProvider>
       </SocketProvider>

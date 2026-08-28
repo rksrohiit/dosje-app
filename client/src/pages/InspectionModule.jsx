@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import InspectionCard from '../components/InspectionCard';
 import RouteOptimizer from '../components/RouteOptimizer';
 import EXIFVerificationModal from '../components/EXIFVerificationModal';
-import { Camera, MapPin, CheckCircle, BrainCircuit, ShieldCheck, Sparkles, RefreshCw, Upload, Navigation, ShieldAlert } from 'lucide-react';
+import BiometricScannerModal from '../components/BiometricScannerModal';
+import { Camera, MapPin, CheckCircle, BrainCircuit, ShieldCheck, Sparkles, RefreshCw, Upload, Navigation, ShieldAlert, Fingerprint } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCurrentLocation } from '../utils/geoUtils';
 import { api } from '../utils/api';
@@ -15,6 +16,7 @@ const InspectionModule = () => {
   const [location, setLocation] = useState(null);
   const [aiResult, setAiResult] = useState(null);
   const [showExifModal, setShowExifModal] = useState(false);
+  const [showBiometricModal, setShowBiometricModal] = useState(false);
 
   const fetchInspections = async () => {
     setLoading(true);
@@ -104,6 +106,12 @@ const InspectionModule = () => {
           photoName="field_photo_01.jpg"
         />
 
+        <BiometricScannerModal
+          isOpen={showBiometricModal}
+          onClose={() => setShowBiometricModal(false)}
+          beneficiaryName="Anita Devi"
+        />
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-200">
           <div>
@@ -153,13 +161,32 @@ const InspectionModule = () => {
           </div>
 
           <div className="space-y-3">
-            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider border-b border-slate-100 pb-1">
-              2. Beneficiary Verification
-            </h3>
+            <div className="flex justify-between items-center border-b border-slate-100 pb-1">
+              <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
+                2. Beneficiary Verification & Aadhaar Biometric Scan
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowBiometricModal(true)}
+                className="text-[11px] font-bold text-amber-800 bg-amber-100 hover:bg-amber-200 px-2.5 py-1 rounded-lg border border-amber-300 flex items-center gap-1"
+              >
+                <Fingerprint className="w-3.5 h-3.5" /> Scan Fingerprint / Iris
+              </button>
+            </div>
+
             <label className="flex items-start gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-blue-50/50 transition-colors">
               <input type="checkbox" defaultChecked required className="mt-1 w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
-              <div>
+              <div className="flex-1">
                 <span className="font-bold text-xs md:text-sm text-slate-800">Beneficiary attendance register matches physical headcount</span>
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowBiometricModal(true)}
+                    className="text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold px-3 py-1.5 rounded-lg flex items-center gap-1 shadow-2xs"
+                  >
+                    <Fingerprint className="w-3.5 h-3.5" /> Aadhaar Biometric RD Audit
+                  </button>
+                </div>
               </div>
             </label>
           </div>
