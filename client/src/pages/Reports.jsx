@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Download, FileText, ChevronRight, Star, X, Printer, ShieldCheck } from 'lucide-react';
 import { api } from '../utils/api';
+import { generateInspectionPDF } from '../utils/pdfGenerator';
 import toast from 'react-hot-toast';
 
 const Reports = () => {
@@ -18,16 +19,16 @@ const Reports = () => {
           setReports(res.data);
         } else {
           setReports([
-            { id: 'rep1', ngo_name: 'Delhi NGO - SMILE Scheme', inspector_name: 'Priya Sharma', title: 'Quarterly Safety Audit', rating: 4, findings: 'Clean dormitories, functional CCTV, verified attendance.', recommendation: 'Release Next Grant Installment', created_at: new Date().toISOString() },
-            { id: 'rep2', ngo_name: 'Mumbai Support - DAP Scheme', inspector_name: 'Priya Sharma', title: 'Surprise On-Site Verification', rating: 5, findings: 'Headcount matches digital attendance. Excellent infrastructure.', recommendation: 'Full Compliance Certified', created_at: new Date(Date.now() - 86400000).toISOString() },
-            { id: 'rep3', ngo_name: 'Chennai Aid - SHG Scheme', inspector_name: 'Priya Sharma', title: 'Attendance Audit', rating: 3, findings: 'Minor register discrepancy resolved during audit.', recommendation: 'Follow-up Inspection in 30 Days', created_at: new Date(Date.now() - 172800000).toISOString() },
+            { id: 'rep1', ngo_name: 'Delhi NGO - SMILE Scheme', scheme: 'SMILE', inspector_name: 'Priya Sharma', title: 'Quarterly Safety Audit', rating: 4, findings: 'Clean dormitories, functional CCTV, verified attendance.', recommendation: 'Release Next Grant Installment', created_at: new Date().toISOString() },
+            { id: 'rep2', ngo_name: 'Mumbai Support - DAP Scheme', scheme: 'DAP', inspector_name: 'Priya Sharma', title: 'Surprise On-Site Verification', rating: 5, findings: 'Headcount matches digital attendance. Excellent infrastructure.', recommendation: 'Full Compliance Certified', created_at: new Date(Date.now() - 86400000).toISOString() },
+            { id: 'rep3', ngo_name: 'Chennai Aid - SHG Scheme', scheme: 'SHG', inspector_name: 'Priya Sharma', title: 'Attendance Audit', rating: 3, findings: 'Minor register discrepancy resolved during audit.', recommendation: 'Follow-up Inspection in 30 Days', created_at: new Date(Date.now() - 172800000).toISOString() },
           ]);
         }
       } catch (e) {
         setReports([
-          { id: 'rep1', ngo_name: 'Delhi NGO - SMILE Scheme', inspector_name: 'Priya Sharma', title: 'Quarterly Safety Audit', rating: 4, findings: 'Clean dormitories, functional CCTV, verified attendance.', recommendation: 'Release Next Grant Installment', created_at: new Date().toISOString() },
-          { id: 'rep2', ngo_name: 'Mumbai Support - DAP Scheme', inspector_name: 'Priya Sharma', title: 'Surprise On-Site Verification', rating: 5, findings: 'Headcount matches digital attendance. Excellent infrastructure.', recommendation: 'Full Compliance Certified', created_at: new Date(Date.now() - 86400000).toISOString() },
-          { id: 'rep3', ngo_name: 'Chennai Aid - SHG Scheme', inspector_name: 'Priya Sharma', title: 'Attendance Audit', rating: 3, findings: 'Minor register discrepancy resolved during audit.', recommendation: 'Follow-up Inspection in 30 Days', created_at: new Date(Date.now() - 172800000).toISOString() },
+          { id: 'rep1', ngo_name: 'Delhi NGO - SMILE Scheme', scheme: 'SMILE', inspector_name: 'Priya Sharma', title: 'Quarterly Safety Audit', rating: 4, findings: 'Clean dormitories, functional CCTV, verified attendance.', recommendation: 'Release Next Grant Installment', created_at: new Date().toISOString() },
+          { id: 'rep2', ngo_name: 'Mumbai Support - DAP Scheme', scheme: 'DAP', inspector_name: 'Priya Sharma', title: 'Surprise On-Site Verification', rating: 5, findings: 'Headcount matches digital attendance. Excellent infrastructure.', recommendation: 'Full Compliance Certified', created_at: new Date(Date.now() - 86400000).toISOString() },
+          { id: 'rep3', ngo_name: 'Chennai Aid - SHG Scheme', scheme: 'SHG', inspector_name: 'Priya Sharma', title: 'Attendance Audit', rating: 3, findings: 'Minor register discrepancy resolved during audit.', recommendation: 'Follow-up Inspection in 30 Days', created_at: new Date(Date.now() - 172800000).toISOString() },
         ]);
       } finally {
         setLoading(false);
@@ -41,6 +42,19 @@ const Reports = () => {
     (r.ngo_name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (r.title || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const handleExportPDF = (report) => {
+    toast.success(`Generating Official DoSJE PDF Report for ${report.id}...`);
+    generateInspectionPDF({
+      id: report.id,
+      ngoName: report.ngo_name,
+      scheme: report.scheme || 'SMILE',
+      inspectorName: report.inspector_name || 'Priya Sharma (PMU)',
+      date: new Date(report.created_at || Date.now()).toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' }),
+      rating: report.rating || 4,
+      findings: report.findings || 'Physical inspection verified on-site.',
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -69,11 +83,11 @@ const Reports = () => {
           </div>
 
           <button
-            onClick={() => window.print()}
-            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold shadow-xs transition-colors"
+            onClick={() => handleExportPDF(reports[0] || { id: 'REP-2026-01' })}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-bold shadow-xs transition-colors"
           >
-            <Printer className="w-4 h-4" />
-            Print / Export PDF
+            <Download className="w-4 h-4" />
+            Download Sample PDF Report
           </button>
         </div>
       </div>
@@ -109,12 +123,18 @@ const Reports = () => {
                       <span className="text-xs font-bold text-slate-700 ml-1">({report.rating || 4}/5)</span>
                     </div>
                   </td>
-                  <td className="p-4">
+                  <td className="p-4 flex items-center gap-2">
                     <button
                       onClick={() => setSelectedReport(report)}
                       className="inline-flex items-center text-xs font-bold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-1.5 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors"
                     >
                       View Report <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                    </button>
+                    <button
+                      onClick={() => handleExportPDF(report)}
+                      className="inline-flex items-center text-xs font-bold text-slate-700 hover:text-slate-900 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200 hover:bg-slate-200 transition-colors"
+                    >
+                      <Download className="w-3.5 h-3.5 mr-1" /> PDF
                     </button>
                   </td>
                 </tr>
@@ -170,10 +190,10 @@ const Reports = () => {
 
             <div className="pt-4 border-t border-slate-100 flex justify-end gap-3">
               <button
-                onClick={() => window.print()}
-                className="bg-slate-900 text-white px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
+                onClick={() => handleExportPDF(selectedReport)}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl text-xs font-bold flex items-center gap-2"
               >
-                <Printer className="w-4 h-4" /> Print Copy
+                <Download className="w-4 h-4" /> Download Official PDF Report
               </button>
             </div>
           </div>
