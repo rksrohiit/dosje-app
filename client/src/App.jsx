@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { SocketProvider } from './context/SocketContext';
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import CCTVViewer from './pages/CCTVViewer';
@@ -116,6 +117,7 @@ function App() {
     <AuthProvider>
       <SocketProvider>
         <AppRoutes />
+        <PWAInstallPrompt />
         <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
       </SocketProvider>
     </AuthProvider>
