@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -16,19 +16,30 @@ import NGOPortal from './pages/NGOPortal';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center min-h-screen bg-slate-900 text-white">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-10 h-10 border-4 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-sm font-semibold tracking-wider">Loading DoSJE Portal...</p>
+      </div>
+    </div>
+  );
   if (!user) return <Navigate to="/login" replace />;
   return children;
 };
 
 const Layout = ({ children }) => {
+  const [mobileOpen, setMobileOpen] = useState(false);
+
   return (
-    <div className="flex h-screen bg-gray-50 overflow-hidden">
-      <Sidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
-          {children}
+    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-900">
+      <Sidebar mobileOpen={mobileOpen} setMobileOpen={setMobileOpen} />
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <Navbar setMobileOpen={setMobileOpen} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 p-4 md:p-6">
+          <div className="max-w-7xl mx-auto space-y-6">
+            {children}
+          </div>
         </main>
       </div>
     </div>
@@ -95,6 +106,7 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
@@ -104,7 +116,7 @@ function App() {
     <AuthProvider>
       <SocketProvider>
         <AppRoutes />
-        <Toaster position="top-right" />
+        <Toaster position="top-right" toastOptions={{ duration: 4000 }} />
       </SocketProvider>
     </AuthProvider>
   );

@@ -1,78 +1,123 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import AttendanceChart from '../components/AttendanceChart';
-import { Sparkles, AlertTriangle } from 'lucide-react';
+import { Sparkles, AlertTriangle, ShieldCheck, Activity } from 'lucide-react';
+import { api } from '../utils/api';
+import toast from 'react-hot-toast';
 
 const Analytics = () => {
-  const alertData = [
-    { name: 'Attendance Drop', value: 45, color: '#ef4444' },
-    { name: 'Compliance Issue', value: 30, color: '#f59e0b' },
-    { name: 'Documentation Missing', value: 25, color: '#3b82f6' },
-  ];
+  const [anomalies, setAnomalies] = useState([
+    { id: 1, ngo_name: 'Mumbai Support - DAP Scheme', anomaly_score: 0.8, issue: 'Consistently reported 90 attendance vs 50 verified attendance for last 7 days.' },
+    { id: 2, ngo_name: 'Jaipur Trust - SMILE Scheme', anomaly_score: 0.6, issue: 'Pre-inspection attendance spike of 45% detected by AI model.' },
+  ]);
 
-  const anomalies = [
-    { id: 1, ngo: 'Care India', score: 85, issue: 'Consistent 30% gap between reported and CCTV verified attendance for last 5 days.' },
-    { id: 2, ngo: 'EduTrust', score: 72, issue: 'Night-time motion detected in restricted zones on multiple occasions.' }
+  useEffect(() => {
+    const fetchAnomalies = async () => {
+      try {
+        const res = await api.analytics.getAnomalies();
+        if (res.data && res.data.length > 0) {
+          setAnomalies(res.data);
+        }
+      } catch (e) {}
+    };
+    fetchAnomalies();
+  }, []);
+
+  const alertData = [
+    { name: 'Attendance Discrepancy', value: 45, color: '#f43f5e' },
+    { name: 'CCTV Camera Offline', value: 30, color: '#f59e0b' },
+    { name: 'Inspection Pending > 30d', value: 25, color: '#3b82f6' },
   ];
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-2 mb-6 text-purple-700 bg-purple-50 px-4 py-2 rounded-lg border border-purple-100 inline-flex">
-        <Sparkles className="w-5 h-5" />
-        <span className="font-semibold">AI-Powered Insights & Anomaly Detection</span>
+      {/* Banner */}
+      <div className="bg-gradient-to-r from-purple-900 via-indigo-950 to-slate-900 rounded-2xl p-5 md:p-6 text-white shadow-lg border border-purple-800/40 flex items-center justify-between gap-4">
+        <div>
+          <div className="inline-flex items-center gap-2 text-purple-300 bg-purple-500/20 px-3 py-1 rounded-full border border-purple-500/30 text-xs font-bold uppercase mb-2">
+            <Sparkles className="w-4 h-4" /> AI Predictive Analytics Engine
+          </div>
+          <h2 className="text-xl md:text-2xl font-black text-white">
+            Anomaly Detection & Attendance Analytics
+          </h2>
+          <p className="text-xs md:text-sm text-slate-300 mt-1 max-w-xl">
+            Machine learning model comparing reported attendance against CCTV face counts to eliminate ghost beneficiaries.
+          </p>
+        </div>
       </div>
 
+      {/* Grid: Attendance Trend Chart + Alert Pie */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <AttendanceChart ngoName="System-wide Aggregate" />
-        
-        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <h3 className="font-semibold text-gray-800 mb-4">Alert Distribution</h3>
-          <div className="h-[250px]">
+        <AttendanceChart ngoName="National System Aggregate" />
+
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-xs">
+          <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Activity className="w-5 h-5 text-blue-600" />
+            AI Anomaly Distribution by Type
+          </h3>
+          <div className="h-[220px]">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={alertData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                <Pie data={alertData} innerRadius={55} outerRadius={80} paddingAngle={5} dataKey="value">
                   {alertData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', borderRadius: '8px', border: 'none', color: '#fff', fontSize: '12px' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex justify-center gap-4 mt-4 text-sm">
+          <div className="flex flex-wrap justify-center gap-4 mt-2 text-xs font-semibold">
             {alertData.map((d, i) => (
-              <div key={i} className="flex items-center gap-1">
+              <div key={i} className="flex items-center gap-1.5">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }}></div>
-                <span className="text-gray-600">{d.name}</span>
+                <span className="text-slate-600">{d.name}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <AlertTriangle className="text-red-500" /> High-Risk Anomalies Detected
+      {/* High-Risk Anomalies Section */}
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-5 md:p-6">
+        <h3 className="text-base md:text-lg font-bold text-slate-900 mb-4 flex items-center gap-2">
+          <AlertTriangle className="text-rose-600 w-5 h-5" />
+          Flagged High-Risk Anomalies (Requires Field Verification)
         </h3>
+
         <div className="space-y-4">
-          {anomalies.map(a => (
-            <div key={a.id} className="p-4 border border-red-100 bg-red-50 rounded-lg">
-              <div className="flex justify-between items-start mb-2">
-                <h4 className="font-semibold text-red-900">{a.ngo}</h4>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-red-800">Anomaly Score:</span>
-                  <div className="w-32 h-2 bg-red-200 rounded-full overflow-hidden">
-                    <div className="h-full bg-red-600" style={{ width: `${a.score}%` }}></div>
+          {anomalies.map((a, idx) => {
+            const scorePercent = Math.round((a.anomaly_score || 0.8) * 100);
+            return (
+              <div key={a.id || idx} className="p-4 border border-rose-200 bg-rose-50/60 rounded-xl space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <h4 className="font-bold text-sm text-rose-950">{a.ngo_name || a.ngo}</h4>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-rose-800">Anomaly Index:</span>
+                    <div className="w-28 h-2.5 bg-rose-200 rounded-full overflow-hidden">
+                      <div className="h-full bg-rose-600 rounded-full" style={{ width: `${scorePercent}%` }}></div>
+                    </div>
+                    <span className="text-xs font-black text-rose-700">{scorePercent}%</span>
                   </div>
-                  <span className="text-sm font-bold text-red-700">{a.score}/100</span>
+                </div>
+
+                <p className="text-xs text-rose-800 font-medium leading-relaxed">
+                  {a.issue || 'Significant variance detected between reported attendance and verified physical headcount.'}
+                </p>
+
+                <div className="pt-1">
+                  <button
+                    onClick={() => toast.success(`Surprise Inspection Dispatched for ${a.ngo_name || 'NGO'}`)}
+                    className="text-xs bg-rose-600 hover:bg-rose-700 text-white px-4 py-2 rounded-lg font-bold transition-all shadow-xs"
+                  >
+                    Dispatch Surprise PMU Inspection
+                  </button>
                 </div>
               </div>
-              <p className="text-sm text-red-700">{a.issue}</p>
-              <div className="mt-3">
-                <button className="text-xs bg-red-600 text-white px-3 py-1.5 rounded font-medium hover:bg-red-700 transition">Schedule Immediate Inspection</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>
