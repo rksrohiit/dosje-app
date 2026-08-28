@@ -1,0 +1,41 @@
+version: '3.9'
+
+# Development override — hot reload for both services
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  server:
+    build:
+      context: ./server
+      target: development
+    container_name: dosje_server_dev
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      JWT_SECRET: dosje_dev_secret
+    volumes:
+      # Mount source for hot reload
+      - ./server:/app
+      - /app/node_modules
+      - sqlite_dev:/app/db
+      - uploads_dev:/app/uploads
+    command: npm run dev
+    ports:
+      - "5000:5000"
+
+  client:
+    image: node:20-alpine
+    container_name: dosje_client_dev
+    working_dir: /app
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0
+    ports:
+      - "5173:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+
+volumes:
+  sqlite_dev:
+  uploads_dev:
