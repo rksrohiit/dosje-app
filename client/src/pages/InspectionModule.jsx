@@ -269,6 +269,13 @@ const InspectionModule = () => {
           </div>
         </form>
 
+        {showCameraCapture && (
+          <MobileCameraCapture
+            onCapture={(imageUrl) => {
+              setCapturedEvidence(imageUrl);
+              setShowCameraCapture(false);
+            }}
+            onClose={() => setShowCameraCapture(false)}
           />
         )}
       </div>
