@@ -3,6 +3,7 @@ import InspectionCard from '../components/InspectionCard';
 import RouteOptimizer from '../components/RouteOptimizer';
 import EXIFVerificationModal from '../components/EXIFVerificationModal';
 import BiometricScannerModal from '../components/BiometricScannerModal';
+import MobileCameraCapture from '../components/MobileCameraCapture';
 import { Camera, MapPin, CheckCircle, BrainCircuit, ShieldCheck, Sparkles, RefreshCw, Upload, Navigation, ShieldAlert, Fingerprint } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCurrentLocation } from '../utils/geoUtils';
@@ -17,6 +18,8 @@ const InspectionModule = () => {
   const [aiResult, setAiResult] = useState(null);
   const [showExifModal, setShowExifModal] = useState(false);
   const [showBiometricModal, setShowBiometricModal] = useState(false);
+  const [showCameraCapture, setShowCameraCapture] = useState(false);
+  const [capturedEvidence, setCapturedEvidence] = useState(null);
 
   const fetchInspections = async () => {
     setLoading(true);
@@ -205,17 +208,42 @@ const InspectionModule = () => {
               </button>
             </div>
 
-            <div
-              onClick={() => setShowExifModal(true)}
-              className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center bg-slate-50 hover:bg-slate-100/80 transition-all cursor-pointer"
-            >
-              <Camera className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-              <p className="text-xs font-bold text-slate-700">Capture or Upload Live Field Evidence</p>
-              <p className="text-[10px] text-slate-400 mt-1">AI automatically checks GPS EXIF metadata and detects tampered/downloaded photos</p>
-              <span className="mt-3 inline-flex items-center gap-1.5 bg-white border border-slate-300 px-4 py-2 rounded-xl text-xs font-bold text-slate-700 shadow-2xs hover:bg-slate-50">
-                <Upload className="w-3.5 h-3.5" /> Attach Field Photo (Run EXIF Fraud Check)
-              </span>
-            </div>
+            {!capturedEvidence ? (
+              <div
+                onClick={() => setShowCameraCapture(true)}
+                className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center bg-slate-50 hover:bg-slate-100/80 transition-all cursor-pointer group"
+              >
+                <Camera className="w-8 h-8 text-blue-500 mx-auto mb-2 group-hover:scale-110 transition-transform" />
+                <p className="text-xs font-bold text-slate-700">Open Live Camera to Capture Field Evidence</p>
+                <p className="text-[10px] text-slate-400 mt-1">Simulates mobile native HTML5 camera API capture flow</p>
+                <span className="mt-3 inline-flex items-center gap-1.5 bg-blue-600 border border-blue-700 px-4 py-2 rounded-xl text-xs font-bold text-white shadow-md shadow-blue-500/20 hover:bg-blue-700">
+                  <Camera className="w-3.5 h-3.5" /> Launch Live Camera Viewfinder
+                </span>
+              </div>
+            ) : (
+              <div className="relative rounded-2xl overflow-hidden border-2 border-green-500 shadow-md">
+                <img src={capturedEvidence} alt="Evidence" className="w-full h-48 object-cover" />
+                <div className="absolute top-2 right-2 bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded shadow flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3" /> CAPTURED LIVE
+                </div>
+                <div className="absolute bottom-2 left-2 right-2 flex justify-between gap-2">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowCameraCapture(true)}
+                    className="flex-1 bg-black/60 backdrop-blur-sm text-white text-xs font-bold py-2 rounded-xl hover:bg-black/80 transition"
+                  >
+                    Retake Photo
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => setShowExifModal(true)}
+                    className="flex-1 bg-blue-600 text-white text-xs font-bold py-2 rounded-xl hover:bg-blue-700 transition flex justify-center items-center gap-1"
+                  >
+                    <ShieldCheck className="w-4 h-4" /> Verify EXIF
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-3">
@@ -334,6 +362,16 @@ const InspectionModule = () => {
             </div>
           )}
         </div>
+      )}
+
+      {showCameraCapture && (
+        <MobileCameraCapture
+          onCapture={(imageUrl) => {
+            setCapturedEvidence(imageUrl);
+            setShowCameraCapture(false);
+          }}
+          onClose={() => setShowCameraCapture(false)}
+        />
       )}
     </div>
   );

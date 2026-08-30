@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Video, Mic, MicOff, VideoOff, PhoneOff, Phone, Monitor, History, UserCheck, Camera, Radio, ShieldCheck, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
@@ -14,6 +15,7 @@ const RTC_CONFIG = {
 const VideoConference = () => {
   const { user } = useAuth();
   const { socket } = useSocket();
+  const location = useLocation();
 
   const [callStatus, setCallStatus] = useState('idle'); // idle | calling | incoming | connected
   const [isMuted, setIsMuted] = useState(false);
@@ -34,6 +36,31 @@ const VideoConference = () => {
     { id: 2, date: '2026-08-27 11:15', target: 'Meera Sharma (Staff)', ngo: 'Mumbai Support', duration: '12m 45s', status: 'Verified' },
     { id: 3, date: '2026-08-26 16:40', target: 'Suresh Patel (Manager)', ngo: 'Chennai Aid', duration: '3m 10s', status: 'Verified' },
   ]);
+
+  useEffect(() => {
+    // If navigated with ?random=true, auto-initiate a surprise VC
+    const queryParams = new URLSearchParams(location.search);
+    if (queryParams.get('random') === 'true' && callStatus === 'idle') {
+      setTimeout(() => {
+        toast.success("AI Selected Random NGO for Surprise Inspection");
+        // We'll set a mock selected user and auto-call after a short delay
+        setSelectedTargetUser({ id: 'u3', name: 'Suresh Patel (Manager)', role: 'ngo' });
+        // The initiateCall function will be triggered by a useEffect when this is set if we add logic,
+        // but easier to just mock the call flow directly here:
+        setCallStatus('calling');
+        startLocalMedia().then(() => {
+          if (socket) {
+            socket.emit('vc_initiate', {
+              target_user_id: 'u3',
+              target_name: 'Random Target (AI Selected)',
+              caller_name: user?.name
+            });
+            toast.loading("Ringing random NGO...", { duration: 3000 });
+          }
+        });
+      }, 500);
+    }
+  }, [location.search, socket, callStatus, user]);
 
   // Start local camera stream
   const startLocalMedia = async () => {

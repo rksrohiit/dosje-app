@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Building2, Activity, ClipboardCheck, AlertCircle, Camera, ShieldCheck, MapPin, Download, Layers } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import StatsCard from '../components/StatsCard';
@@ -10,6 +11,7 @@ import { generateTechStackPDF } from '../utils/techStackPdfGenerator';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [stats, setStats] = useState({
     total_ngos: 10,
     active_projects: 10,
@@ -94,6 +96,13 @@ const Dashboard = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
+            <button
+              onClick={() => navigate('/vc?random=true')}
+              className="bg-indigo-500 hover:bg-indigo-400 text-white text-xs font-black px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-2 active:scale-95 border border-indigo-400/50"
+            >
+              <Camera className="w-4 h-4" /> Surprise Random VC
+            </button>
+
             <button
               onClick={handleDownloadTechStack}
               className="bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-black px-4 py-2.5 rounded-xl transition-all shadow-md flex items-center gap-2 active:scale-95"
