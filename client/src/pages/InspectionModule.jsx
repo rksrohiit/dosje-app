@@ -4,7 +4,7 @@ import RouteOptimizer from '../components/RouteOptimizer';
 import EXIFVerificationModal from '../components/EXIFVerificationModal';
 import BiometricScannerModal from '../components/BiometricScannerModal';
 import MobileCameraCapture from '../components/MobileCameraCapture';
-import { Camera, MapPin, CheckCircle, BrainCircuit, ShieldCheck, Sparkles, RefreshCw, Upload, Navigation, ShieldAlert, Fingerprint } from 'lucide-react';
+import { Camera, MapPin, CheckCircle, BrainCircuit, ShieldCheck, Sparkles, RefreshCw, Upload, Navigation, ShieldAlert, Fingerprint, ClipboardCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getCurrentLocation } from '../utils/geoUtils';
 import { api } from '../utils/api';
@@ -268,6 +268,9 @@ const InspectionModule = () => {
             </button>
           </div>
         </form>
+
+          />
+        )}
       </div>
     );
   }
@@ -285,6 +288,18 @@ const InspectionModule = () => {
           }`}
         >
           My Inspection Assignments ({inspections.length})
+        </button>
+
+        <button
+          onClick={() => setActiveTab('manual_inspection')}
+          className={`px-5 py-3 font-bold text-xs md:text-sm transition-all border-b-2 flex items-center gap-2 ${
+            activeTab === 'manual_inspection'
+              ? 'border-emerald-600 text-emerald-600'
+              : 'border-transparent text-slate-500 hover:text-slate-800'
+          }`}
+        >
+          <ClipboardCheck className="w-4 h-4" />
+          Manual Inspection
         </button>
 
         <button
@@ -329,6 +344,64 @@ const InspectionModule = () => {
         <RouteOptimizer />
       )}
 
+      {activeTab === 'manual_inspection' && (
+        <div className="bg-white rounded-2xl p-6 md:p-8 max-w-2xl mx-auto shadow-sm border border-slate-200">
+          <div className="flex items-center gap-3 mb-6 border-b border-slate-100 pb-4">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+              <ClipboardCheck className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-slate-800">Initiate Manual Inspection</h2>
+              <p className="text-xs text-slate-500">Ad-hoc surprise inspection bypassing the AI dispatcher.</p>
+            </div>
+          </div>
+
+          <form className="space-y-4" onSubmit={(e) => {
+            e.preventDefault();
+            toast.success("Manual Inspection Triggered Successfully!");
+            setActiveInspection({
+              id: `insp-manual-${Date.now()}`,
+              ngo_name: "Selected NGO (Manual Ad-Hoc)",
+              status: "in_progress",
+              priority: "high"
+            });
+          }}>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Target NGO / Institute</label>
+              <select className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="">Select NGO for Surprise Inspection...</option>
+                <option value="ngo1">Delhi NGO</option>
+                <option value="ngo2">Mumbai Support</option>
+                <option value="ngo3">Chennai Aid</option>
+                <option value="ngo4">Kolkata Care</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Assigned PMU Inspector</label>
+              <select className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="">Select Inspector...</option>
+                <option value="insp1">Priya Sharma (Current User)</option>
+                <option value="insp2">Ramesh Kumar</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Priority Level</label>
+              <select className="w-full border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="high">High (Surprise Audit)</option>
+                <option value="medium">Medium (Routine Check)</option>
+                <option value="low">Low (Follow-up)</option>
+              </select>
+            </div>
+
+            <button type="submit" className="w-full mt-6 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm px-8 py-3.5 rounded-xl shadow-lg shadow-emerald-900/20 transition-all active:scale-95">
+              Initiate & Start Manual Inspection Now
+            </button>
+          </form>
+        </div>
+      )}
+
       {activeTab === 'ai_assign' && (
         <div className="bg-gradient-to-br from-purple-900 via-slate-900 to-indigo-950 rounded-2xl p-6 md:p-10 text-white text-center max-w-2xl mx-auto shadow-xl border border-purple-800/40 space-y-5">
           <div className="w-16 h-16 rounded-full bg-purple-500/20 border border-purple-400/40 flex items-center justify-center mx-auto text-purple-300">
@@ -362,16 +435,6 @@ const InspectionModule = () => {
             </div>
           )}
         </div>
-      )}
-
-      {showCameraCapture && (
-        <MobileCameraCapture
-          onCapture={(imageUrl) => {
-            setCapturedEvidence(imageUrl);
-            setShowCameraCapture(false);
-          }}
-          onClose={() => setShowCameraCapture(false)}
-        />
       )}
     </div>
   );
