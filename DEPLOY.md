@@ -5,7 +5,6 @@
 | Method | Cost | Difficulty | Best For |
 |--------|------|------------|----------|
 | 🐳 Docker (local/VPS) | Free | ⭐⭐ | Full control |
-| 🚂 Railway | Free tier | ⭐ | Quickest cloud deploy |
 | 🟣 Render | Free tier | ⭐ | Best free option |
 | ☁️ VPS (DigitalOcean/AWS) | ~$5/mo | ⭐⭐⭐ | Production govt use |
 
@@ -53,34 +52,7 @@ uploads_data (Named volume)   → persisted across restarts
 
 ---
 
-## Option 2 — Railway (Recommended Free Cloud)
-
-### Step 1: Push code to GitHub
-```powershell
-cd C:\Users\lenovo\.gemini\antigravity\scratch\dosje-app
-git init
-git add .
-git commit -m "Initial commit: DoSJE Monitoring Platform"
-git remote add origin https://github.com/YOUR_USERNAME/dosje-app.git
-git push -u origin main
-```
-
-### Step 2: Deploy Backend on Railway
-1. Go to **https://railway.app** → Sign in with GitHub
-2. Click **"New Project"** → **"Deploy from GitHub repo"**
-3. Select your `dosje-app` repo
-4. Railway detects `railway.toml` automatically
-5. Set env vars: `JWT_SECRET=<strong-secret>`, `NODE_ENV=production`
-6. Copy your Railway URL: `https://dosje-server-xxx.railway.app`
-
-### Step 3: Deploy Frontend
-1. In same project → **New Service** → set `ROOT_DIR=client`
-2. Set `VITE_API_URL=https://dosje-server-xxx.railway.app`
-3. Deploy → get: `https://dosje-client-xxx.railway.app`
-
----
-
-## Option 3 — Render.com (Best Free Tier)
+## Option 2 — Render.com (Best Free Tier)
 
 1. Go to **https://render.com** → Sign in
 2. Click **New** → **Blueprint**
@@ -92,7 +64,7 @@ git push -u origin main
 
 ---
 
-## Option 4 — VPS (Production / Govt Use)
+## Option 3 — VPS (Production / Govt Use)
 
 ```bash
 # On Ubuntu 22.04 VPS:
@@ -148,7 +120,6 @@ dosje-app/
 ├── client/nginx.conf              SPA routing + API proxy + gzip
 ├── docker-compose.yml             Production orchestration
 ├── docker-compose.dev.yml         Dev with hot reload
-├── railway.toml                   Railway platform config
 ├── render.yaml                    Render.com blueprint
 ├── .env.example                   Environment template
 └── .gitignore
