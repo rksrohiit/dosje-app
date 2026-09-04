@@ -53,6 +53,64 @@ app.use('/api/projects',      require('./routes/projects'));
 app.use('/api/beneficiaries', require('./routes/beneficiaries'));
 app.use('/api/evidence',      require('./routes/evidence'));
 
+// ─── Model Context Protocol (MCP) Remote SSE Transport ───────────────────
+const { SSEServerTransport } = require('@modelcontextprotocol/sdk/server/sse.js');
+const { createDosjeMcpServer } = require('./mcp/dosjeMcpServer');
+
+let activeSseTransports = new Map();
+
+app.get('/sse', async (req, res) => {
+  try {
+    const transport = new SSEServerTransport('/messages', res);
+    const mcpServer = createDosjeMcpServer();
+    activeSseTransports.set(transport.sessionId, transport);
+
+    res.on('close', () => {
+      activeSseTransports.delete(transport.sessionId);
+    });
+
+    await mcpServer.connect(transport);
+  } catch (err) {
+    console.error('Error establishing MCP SSE connection:', err);
+    if (!res.headersSent) res.status(500).send('MCP connection failed');
+  }
+});
+
+app.post('/messages', async (req, res) => {
+  const sessionId = req.query.sessionId;
+  const transport = sessionId ? activeSseTransports.get(sessionId) : activeSseTransports.values().next().value;
+  if (transport) {
+    await transport.handlePostMessage(req, res);
+  } else {
+    res.status(400).json({ error: 'No active MCP SSE transport session' });
+  }
+});
+
+// MCP info endpoint for dashboard inspection
+app.get('/api/mcp/info', (req, res) => {
+  res.json({
+    name: 'dosje-monitoring-mcp',
+    status: 'online',
+    version: '1.0.0',
+    protocolVersion: '2024-11-05',
+    transports: {
+      stdio: 'node server/mcp/index.js',
+      sse: `${req.protocol}://${req.get('host')}/sse`
+    },
+    toolsCount: 8,
+    tools: [
+      'dosje_list_projects',
+      'dosje_create_project',
+      'dosje_list_beneficiaries',
+      'dosje_get_beneficiary_status',
+      'dosje_query_field_evidence',
+      'dosje_calculate_trust_score',
+      'dosje_get_compliance_stats',
+      'dosje_trigger_ai_inspection'
+    ]
+  });
+});
+
 // ─── Global Error Handler ─────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   console.error('Unhandled error:', err.message);

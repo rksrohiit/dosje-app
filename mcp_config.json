@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "dosje-monitoring-local": {
+      "command": "node",
+      "args": ["server/mcp/index.js"],
+      "env": {
+        "NODE_ENV": "development"
+      }
+    },
+    "dosje-monitoring-remote": {
+      "serverUrl": "http://localhost:5000/sse"
+    }
+  }
+}

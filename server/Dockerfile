@@ -21,5 +21,5 @@ RUN mkdir -p uploads
 # Expose API port
 EXPOSE 5000
 
-# Seed DB then start server
-CMD ["sh", "-c", "node db/seed.js && node index.js"]
+# Start server (initDB automatically seeds if database is fresh)
+CMD ["node", "index.js"]
