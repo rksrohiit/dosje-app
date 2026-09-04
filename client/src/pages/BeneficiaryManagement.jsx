@@ -20,12 +20,14 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import persistentStorage from '../utils/persistentStorage';
+
 const BeneficiaryManagement = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [beneficiaries, setBeneficiaries] = useState([]);
-  const [projects, setProjects] = useState([]);
+  const [beneficiaries, setBeneficiaries] = useState(() => persistentStorage.getBeneficiaries());
+  const [projects, setProjects] = useState(() => persistentStorage.getProjects());
   const [loading, setLoading] = useState(true);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -40,7 +42,7 @@ const BeneficiaryManagement = () => {
     state: 'Delhi',
     phone: '',
     aadhaar_last4: '',
-    project_id: 'proj-001',
+    project_id: 'DOSJE-PROJECT-2026-001',
     lat: 28.5935,
     lng: 77.0480
   });
@@ -52,83 +54,15 @@ const BeneficiaryManagement = () => {
         api.projects.getAll()
       ]);
 
-      if (benRes.status === 'fulfilled' && benRes.value.data) {
-        setBeneficiaries(benRes.value.data);
-      } else {
-        // Fallback data
-        setBeneficiaries([
-          {
-            id: 'BEN-1001',
-            name: 'Anita Devi',
-            guardian_name: 'Ram Prasad',
-            village: 'Dwarka Sector 12',
-            district: 'South West Delhi',
-            state: 'Delhi',
-            phone: '9876543201',
-            aadhaar_last4: '4523',
-            project_id: 'proj-001',
-            project_name: 'Rural Education Support 2026',
-            status: 'verified',
-            services_received: '["Books", "Uniform", "Mid-Day Meal"]',
-            verification_count: 3,
-            last_verified_at: '2026-08-28T10:30:00Z'
-          },
-          {
-            id: 'BEN-1002',
-            name: 'Ravi Kumar',
-            guardian_name: 'Shanti Devi',
-            village: 'Dwarka Sector 7',
-            district: 'South West Delhi',
-            state: 'Delhi',
-            phone: '9876543202',
-            aadhaar_last4: '7891',
-            project_id: 'proj-001',
-            project_name: 'Rural Education Support 2026',
-            status: 'verified',
-            services_received: '["Books", "Mid-Day Meal"]',
-            verification_count: 2,
-            last_verified_at: '2026-08-25T14:15:00Z'
-          },
-          {
-            id: 'BEN-1003',
-            name: 'Sunita Sharma',
-            guardian_name: 'Mohan Sharma',
-            village: 'Dwarka Sector 19',
-            district: 'South West Delhi',
-            state: 'Delhi',
-            phone: '9876543203',
-            aadhaar_last4: '3456',
-            project_id: 'proj-001',
-            project_name: 'Rural Education Support 2026',
-            status: 'pending',
-            services_received: '[]',
-            verification_count: 0,
-            last_verified_at: null
-          },
-          {
-            id: 'BEN-1005',
-            name: 'Meera Gupta',
-            guardian_name: 'Raj Gupta',
-            village: 'Rohini Sector 3',
-            district: 'North West Delhi',
-            state: 'Delhi',
-            phone: '9876543205',
-            aadhaar_last4: '2345',
-            project_id: 'proj-002',
-            project_name: 'Skill Development Program',
-            status: 'verified',
-            services_received: '["Tailoring Kit", "Training Certificate"]',
-            verification_count: 4,
-            last_verified_at: '2026-08-27T11:45:00Z'
-          }
-        ]);
-      }
+      const serverBen = (benRes.status === 'fulfilled' && benRes.value.data) ? benRes.value.data : [];
+      setBeneficiaries(persistentStorage.getBeneficiaries(serverBen));
 
-      if (projRes.status === 'fulfilled' && projRes.value.data) {
-        setProjects(projRes.value.data);
-      }
+      const serverProj = (projRes.status === 'fulfilled' && projRes.value.data) ? projRes.value.data : [];
+      setProjects(persistentStorage.getProjects(serverProj));
     } catch (err) {
-      console.warn('Error fetching beneficiary data:', err);
+      console.warn('Error fetching beneficiary data, using persistent storage:', err);
+      setBeneficiaries(persistentStorage.getBeneficiaries());
+      setProjects(persistentStorage.getProjects());
     } finally {
       setLoading(false);
     }
@@ -136,6 +70,17 @@ const BeneficiaryManagement = () => {
 
   useEffect(() => {
     fetchData();
+
+    const handleStorageChange = (e) => {
+      if (!e.detail || e.detail.key === 'dosje_custom_beneficiaries') {
+        setBeneficiaries(persistentStorage.getBeneficiaries());
+      }
+      if (!e.detail || e.detail.key === 'dosje_custom_projects') {
+        setProjects(persistentStorage.getProjects());
+      }
+    };
+    window.addEventListener('dosje_storage_changed', handleStorageChange);
+    return () => window.removeEventListener('dosje_storage_changed', handleStorageChange);
   }, []);
 
   const handleRegister = async (e) => {
@@ -145,24 +90,29 @@ const BeneficiaryManagement = () => {
       return;
     }
 
+    const newId = `BEN-${String(beneficiaries.length + 1001).padStart(4, '0')}`;
+    const selectedProj = projects.find(p => p.id === formData.project_id);
+    const newBen = {
+      id: newId,
+      ...formData,
+      project_name: selectedProj ? selectedProj.name : 'DoSJE Project',
+      status: 'pending',
+      services_received: '[]',
+      verification_count: 0,
+      last_verified_at: null
+    };
+
+    // Save immediately to persistent storage
+    persistentStorage.saveBeneficiary(newBen);
+    setBeneficiaries(prev => [newBen, ...prev.filter(b => b.id !== newId)]);
+    setShowRegisterModal(false);
+    toast.success(`Beneficiary enrolled: ${newId}!`);
+
+    // Sync to backend API
     try {
-      const res = await api.beneficiaries.register(formData);
-      toast.success(`Beneficiary enrolled: ${res.data?.id || 'BEN-NEW'}!`);
-      setShowRegisterModal(false);
-      fetchData();
+      await api.beneficiaries.register({ ...formData, id: newId });
     } catch (err) {
-      const newId = `BEN-${String(beneficiaries.length + 1001).padStart(4, '0')}`;
-      const newBen = {
-        id: newId,
-        ...formData,
-        status: 'pending',
-        services_received: '[]',
-        verification_count: 0,
-        last_verified_at: null
-      };
-      setBeneficiaries([newBen, ...beneficiaries]);
-      toast.success(`Beneficiary enrolled: ${newId}`);
-      setShowRegisterModal(false);
+      console.warn('Backend sync failed, safely saved locally:', err);
     }
   };
 
@@ -230,8 +180,9 @@ const BeneficiaryManagement = () => {
             className="text-xs border border-slate-300 rounded-xl px-3 py-2 bg-white outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="all">All Projects</option>
-            <option value="proj-001">Rural Education Support 2026</option>
-            <option value="proj-002">Skill Development Program</option>
+            {projects.map(p => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
           </select>
 
           {['all', 'verified', 'pending'].map((st) => (
@@ -391,8 +342,9 @@ const BeneficiaryManagement = () => {
                   onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
                   className="w-full p-2.5 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
                 >
-                  <option value="proj-001">Rural Education Support 2026 (DOSJE-PROJECT-2026-001)</option>
-                  <option value="proj-002">Skill Development Program (DOSJE-PROJECT-2026-002)</option>
+                  {projects.map(p => (
+                    <option key={p.id} value={p.id}>{p.id} - {p.name}</option>
+                  ))}
                 </select>
               </div>
 

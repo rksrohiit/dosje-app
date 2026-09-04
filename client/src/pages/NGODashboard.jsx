@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import persistentStorage from '../utils/persistentStorage';
+
 const NGODashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -33,36 +35,51 @@ const NGODashboard = () => {
     confirmed_count: 7
   });
 
-  const [projects, setProjects] = useState([]);
-  const [recentEvidence, setRecentEvidence] = useState([]);
+  const [projects, setProjects] = useState(() => persistentStorage.getProjects());
+  const [recentEvidence, setRecentEvidence] = useState(() => persistentStorage.getEvidence().slice(0, 5));
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [statsRes, projRes, evRes] = await Promise.allSettled([
-          api.evidence.getStats(),
-          api.projects.getAll(),
-          api.evidence.getAll()
-        ]);
+  const fetchData = async () => {
+    try {
+      const [statsRes, projRes, evRes] = await Promise.allSettled([
+        api.evidence.getStats(),
+        api.projects.getAll(),
+        api.evidence.getAll()
+      ]);
 
-        if (statsRes.status === 'fulfilled' && statsRes.value.data) {
-          setStats(statsRes.value.data);
-        }
-        if (projRes.status === 'fulfilled' && projRes.value.data) {
-          setProjects(projRes.value.data);
-        }
-        if (evRes.status === 'fulfilled' && evRes.value.data) {
-          setRecentEvidence(evRes.value.data.slice(0, 5));
-        }
-      } catch (err) {
-        console.warn('Using fallback NGO dashboard data:', err);
-      } finally {
-        setLoading(false);
+      if (statsRes.status === 'fulfilled' && statsRes.value.data) {
+        setStats(statsRes.value.data);
+      }
+
+      const serverProjects = (projRes.status === 'fulfilled' && projRes.value.data) ? projRes.value.data : [];
+      const mergedProjects = persistentStorage.getProjects(serverProjects);
+      setProjects(mergedProjects);
+
+      const serverEvidence = (evRes.status === 'fulfilled' && evRes.value.data) ? evRes.value.data : [];
+      const mergedEvidence = persistentStorage.getEvidence(serverEvidence);
+      setRecentEvidence(mergedEvidence.slice(0, 5));
+    } catch (err) {
+      console.warn('Using fallback NGO dashboard data:', err);
+      setProjects(persistentStorage.getProjects());
+      setRecentEvidence(persistentStorage.getEvidence().slice(0, 5));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+
+    const handleStorageChange = (e) => {
+      if (!e.detail || e.detail.key === 'dosje_custom_projects') {
+        setProjects(persistentStorage.getProjects());
+      }
+      if (!e.detail || e.detail.key === 'dosje_custom_evidence') {
+        setRecentEvidence(persistentStorage.getEvidence().slice(0, 5));
       }
     };
-
-    fetchData();
+    window.addEventListener('dosje_storage_changed', handleStorageChange);
+    return () => window.removeEventListener('dosje_storage_changed', handleStorageChange);
   }, []);
 
   return (

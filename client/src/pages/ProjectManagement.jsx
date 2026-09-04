@@ -18,9 +18,11 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import persistentStorage from '../utils/persistentStorage';
+
 const ProjectManagement = () => {
   const { user } = useAuth();
-  const [projects, setProjects] = useState([]);
+  const [projects, setProjects] = useState(() => persistentStorage.getProjects());
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,45 +46,12 @@ const ProjectManagement = () => {
   const fetchProjects = async () => {
     try {
       const res = await api.projects.getAll();
-      if (res.data && res.data.length > 0) {
-        setProjects(res.data);
-      } else {
-        // Fallback demo data
-        setProjects([
-          {
-            id: 'DOSJE-PROJECT-2026-001',
-            name: 'Rural Education Support 2026',
-            scheme_name: 'SMILE',
-            location: 'Sehore, Madhya Pradesh',
-            state: 'Madhya Pradesh',
-            district: 'Sehore',
-            beneficiary_target: 150,
-            beneficiary_count: 142,
-            budget: 500000,
-            start_date: '2026-09-01',
-            end_date: '2026-12-31',
-            status: 'active',
-            description: 'Educational kits, tuition assistance, and daily nourishment for rural SC/ST children.'
-          },
-          {
-            id: 'DOSJE-PROJECT-2026-002',
-            name: 'Skill Development & Livelihood Program',
-            scheme_name: 'SHG',
-            location: 'Rohini, New Delhi',
-            state: 'Delhi',
-            district: 'North West Delhi',
-            beneficiary_target: 75,
-            beneficiary_count: 68,
-            budget: 300000,
-            start_date: '2026-08-15',
-            end_date: '2027-02-28',
-            status: 'active',
-            description: 'Handicraft training, digital payment onboarding, and micro-grant seed assistance for self-help groups.'
-          }
-        ]);
-      }
+      const merged = persistentStorage.getProjects(res.data);
+      setProjects(merged);
     } catch (err) {
-      console.warn('Using seeded project list:', err);
+      console.warn('Backend unavailable, using persistent storage:', err);
+      const merged = persistentStorage.getProjects();
+      setProjects(merged);
     } finally {
       setLoading(false);
     }
@@ -90,27 +59,39 @@ const ProjectManagement = () => {
 
   useEffect(() => {
     fetchProjects();
+
+    const handleStorageUpdate = (e) => {
+      if (!e.detail || e.detail.key === 'dosje_custom_projects') {
+        setProjects(persistentStorage.getProjects());
+      }
+    };
+    window.addEventListener('dosje_storage_changed', handleStorageUpdate);
+    return () => window.removeEventListener('dosje_storage_changed', handleStorageUpdate);
   }, []);
 
   const handleCreateProject = async (e) => {
     e.preventDefault();
+    const newProjId = `DOSJE-PROJECT-${new Date().getFullYear()}-${String(projects.length + 1).padStart(3, '0')}`;
+    const schemeMap = { s1: 'SMILE', s2: 'DAP', s3: 'SHG' };
+    const newProjectObj = {
+      id: newProjId,
+      ...formData,
+      scheme_name: schemeMap[formData.scheme_id] || 'SMILE',
+      status: 'active',
+      beneficiary_count: 0
+    };
+
+    // Save to persistent storage immediately
+    persistentStorage.saveProject(newProjectObj);
+    setProjects(prev => [newProjectObj, ...prev.filter(p => p.id !== newProjId)]);
+    setShowCreateModal(false);
+    toast.success(`Project created with ID: ${newProjId}!`);
+
+    // Also persist to backend API
     try {
-      const res = await api.projects.create(formData);
-      toast.success(`Project created with ID: ${res.data?.id || 'DOSJE-PROJECT-2026-NEW'}!`);
-      setShowCreateModal(false);
-      fetchProjects();
+      await api.projects.create({ ...formData, id: newProjId });
     } catch (err) {
-      // Offline / fallback creation
-      const newProjId = `DOSJE-PROJECT-${new Date().getFullYear()}-${String(projects.length + 1).padStart(3, '0')}`;
-      const newProj = {
-        id: newProjId,
-        ...formData,
-        status: 'active',
-        beneficiary_count: 0
-      };
-      setProjects([newProj, ...projects]);
-      toast.success(`Project registered: ${newProjId}`);
-      setShowCreateModal(false);
+      console.warn('Backend sync failed, saved locally to persistent storage:', err);
     }
   };
 

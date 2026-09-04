@@ -18,9 +18,11 @@ import {
   ChevronDown
 } from 'lucide-react';
 
+import persistentStorage from '../utils/persistentStorage';
+
 const EvidenceGallery = () => {
   const { user } = useAuth();
-  const [evidenceList, setEvidenceList] = useState([]);
+  const [evidenceList, setEvidenceList] = useState(() => persistentStorage.getEvidence());
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,73 +32,25 @@ const EvidenceGallery = () => {
     const fetchEvidence = async () => {
       try {
         const res = await api.evidence.getAll();
-        if (res.data && res.data.length > 0) {
-          setEvidenceList(res.data);
-        } else {
-          // Fallback seeded list
-          setEvidenceList([
-            {
-              id: 'EV-001',
-              project_name: 'Rural Education Support 2026',
-              beneficiary_name: 'Anita Devi',
-              trust_score: 95,
-              trust_status: 'verified',
-              verification_code: 'X7P92',
-              distance_from_target: 45,
-              file_hash: '8f3a91bc92de104a7b5c8290fae139820541cdb387e042a9b31d8e97f001',
-              captured_at: '2026-08-30T10:14:00Z',
-              beneficiary_confirmed: 1,
-              file_url: 'https://images.unsplash.com/photo-1593113563332-f368c8585489?q=80&w=600&auto=format&fit=crop'
-            },
-            {
-              id: 'EV-002',
-              project_name: 'Rural Education Support 2026',
-              beneficiary_name: 'Ravi Kumar',
-              trust_score: 88,
-              trust_status: 'review',
-              verification_code: 'A8K47',
-              distance_from_target: 120,
-              file_hash: '3e1c94ba02fe881d7a4b9180fae139820541cdb387e042a9b31d8e97f002',
-              captured_at: '2026-08-29T14:30:00Z',
-              beneficiary_confirmed: 1,
-              file_url: 'https://images.unsplash.com/photo-1542810634-71277d95dcbb?q=80&w=600&auto=format&fit=crop'
-            },
-            {
-              id: 'EV-005',
-              project_name: 'Skill Development Program',
-              beneficiary_name: 'Meera Gupta',
-              trust_score: 96,
-              trust_status: 'verified',
-              verification_code: 'T5W81',
-              distance_from_target: 22,
-              file_hash: '5b8a91bc92de104a7b5c8290fae139820541cdb387e042a9b31d8e97f005',
-              captured_at: '2026-08-28T16:20:00Z',
-              beneficiary_confirmed: 1,
-              file_url: 'https://images.unsplash.com/photo-1577495508048-b635879837f1?q=80&w=600&auto=format&fit=crop'
-            },
-            {
-              id: 'EV-006',
-              project_name: 'Skill Development Program',
-              beneficiary_name: 'Kamla Devi',
-              trust_score: 45,
-              trust_status: 'suspicious',
-              verification_code: null,
-              distance_from_target: 850,
-              file_hash: '7d4f91bc92de104a7b5c8290fae139820541cdb387e042a9b31d8e97f006',
-              captured_at: '2026-08-26T09:12:00Z',
-              beneficiary_confirmed: 0,
-              file_url: 'https://images.unsplash.com/photo-1509062522246-3755977927d7?q=80&w=600&auto=format&fit=crop'
-            }
-          ]);
-        }
+        const merged = persistentStorage.getEvidence(res.data);
+        setEvidenceList(merged);
       } catch (err) {
-        console.warn('Fallback evidence loaded:', err);
+        console.warn('Backend unavailable, using persistent storage evidence:', err);
+        setEvidenceList(persistentStorage.getEvidence());
       } finally {
         setLoading(false);
       }
     };
 
     fetchEvidence();
+
+    const handleStorageChange = (e) => {
+      if (!e.detail || e.detail.key === 'dosje_custom_evidence') {
+        setEvidenceList(persistentStorage.getEvidence());
+      }
+    };
+    window.addEventListener('dosje_storage_changed', handleStorageChange);
+    return () => window.removeEventListener('dosje_storage_changed', handleStorageChange);
   }, []);
 
   const filtered = evidenceList.filter(ev => {

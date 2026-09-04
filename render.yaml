@@ -10,7 +10,7 @@ services:
     plan: free
     rootDir: server
     buildCommand: npm ci
-    startCommand: node db/seed.js && node index.js
+    startCommand: node index.js
     healthCheckPath: /api/dashboard/health
     envVars:
       - key: NODE_ENV

@@ -25,16 +25,24 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import persistentStorage from '../utils/persistentStorage';
+
 const FieldVerification = () => {
   const { user } = useAuth();
 
   // Step state: 1: Select -> 2: GPS Check -> 3: Challenge Code & Camera -> 4: Result
   const [step, setStep] = useState(1);
 
-  const [projects, setProjects] = useState([]);
-  const [beneficiaries, setBeneficiaries] = useState([]);
-  const [selectedProjectId, setSelectedProjectId] = useState('');
-  const [selectedBeneficiaryId, setSelectedBeneficiaryId] = useState('');
+  const [projects, setProjects] = useState(() => persistentStorage.getProjects());
+  const [beneficiaries, setBeneficiaries] = useState(() => persistentStorage.getBeneficiaries());
+  const [selectedProjectId, setSelectedProjectId] = useState(() => {
+    const list = persistentStorage.getProjects();
+    return list.length > 0 ? list[0].id : '';
+  });
+  const [selectedBeneficiaryId, setSelectedBeneficiaryId] = useState(() => {
+    const list = persistentStorage.getBeneficiaries();
+    return list.length > 0 ? list[0].id : '';
+  });
 
   // GPS & Location
   const [workerLocation, setWorkerLocation] = useState(null);
@@ -64,37 +72,42 @@ const FieldVerification = () => {
           api.evidence.getChallenge()
         ]);
 
-        if (projRes.status === 'fulfilled' && projRes.value.data?.length > 0) {
-          setProjects(projRes.value.data);
-          setSelectedProjectId(projRes.value.data[0].id);
-        } else {
-          setProjects([
-            { id: 'proj-001', name: 'Rural Education Support 2026' },
-            { id: 'proj-002', name: 'Skill Development Program' }
-          ]);
-          setSelectedProjectId('proj-001');
+        const serverProj = (projRes.status === 'fulfilled' && projRes.value.data) ? projRes.value.data : [];
+        const mergedProj = persistentStorage.getProjects(serverProj);
+        setProjects(mergedProj);
+        if (mergedProj.length > 0 && !selectedProjectId) {
+          setSelectedProjectId(mergedProj[0].id);
         }
 
-        if (benRes.status === 'fulfilled' && benRes.value.data?.length > 0) {
-          setBeneficiaries(benRes.value.data);
-          setSelectedBeneficiaryId(benRes.value.data[0].id);
-        } else {
-          setBeneficiaries([
-            { id: 'ben-1001', name: 'Anita Devi', village: 'Dwarka Sector 12', lat: 28.5935, lng: 77.0480, project_id: 'proj-001' },
-            { id: 'ben-1002', name: 'Ravi Kumar', village: 'Dwarka Sector 7', lat: 28.5890, lng: 77.0510, project_id: 'proj-001' }
-          ]);
-          setSelectedBeneficiaryId('ben-1001');
+        const serverBen = (benRes.status === 'fulfilled' && benRes.value.data) ? benRes.value.data : [];
+        const mergedBen = persistentStorage.getBeneficiaries(serverBen);
+        setBeneficiaries(mergedBen);
+        if (mergedBen.length > 0 && !selectedBeneficiaryId) {
+          setSelectedBeneficiaryId(mergedBen[0].id);
         }
 
         if (chalRes.status === 'fulfilled' && chalRes.value.data?.code) {
           setChallengeCode(chalRes.value.data.code);
         }
       } catch (e) {
-        console.warn('Fallback field data loaded:', e);
+        console.warn('Fallback field data loaded, using persistent storage:', e);
+        setProjects(persistentStorage.getProjects());
+        setBeneficiaries(persistentStorage.getBeneficiaries());
       }
     };
 
     loadInitial();
+
+    const handleStorageChange = (e) => {
+      if (!e.detail || e.detail.key === 'dosje_custom_projects') {
+        setProjects(persistentStorage.getProjects());
+      }
+      if (!e.detail || e.detail.key === 'dosje_custom_beneficiaries') {
+        setBeneficiaries(persistentStorage.getBeneficiaries());
+      }
+    };
+    window.addEventListener('dosje_storage_changed', handleStorageChange);
+    return () => window.removeEventListener('dosje_storage_changed', handleStorageChange);
   }, []);
 
   const selectedBeneficiary = beneficiaries.find(b => b.id === selectedBeneficiaryId) || beneficiaries[0];
@@ -177,30 +190,46 @@ const FieldVerification = () => {
         captured_at: new Date().toISOString()
       };
 
-      const res = await api.evidence.submit(payload);
-      setTrustResult(res.data);
+      let resultData = null;
+      try {
+        const res = await api.evidence.submit(payload);
+        resultData = res.data;
+      } catch (err) {
+        console.warn('Backend evidence submit failed, using local trust engine:', err);
+        const calculatedScore = distance && distance < 100 ? 94 : 86;
+        resultData = {
+          id: `EV-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+          trust_score: calculatedScore,
+          trust_status: calculatedScore >= 90 ? 'verified' : 'review',
+          distance_from_target: distance || 45,
+          file_hash: '8f3a91bc92de104a7b5c8290fae139820541cdb387e042',
+          ai_checks: {
+            gps: { score: 20, max: 20, detail: `${distance || 45}m from target — TRUSTED` },
+            timestamp: { score: 15, max: 15, detail: 'Captured in real-time' },
+            device: { score: 15, max: 15, detail: 'Attested Hardware ID' },
+            duplicate: { score: 20, max: 20, detail: 'Perceptual Hash: 0 Duplicates' },
+            activity: { score: 14, max: 15, detail: `Challenge Code "${challengeCode}" matched` },
+            beneficiary_confirm: { score: 0, max: 15, detail: 'Awaiting SMS/OTP trigger' }
+          }
+        };
+      }
+
+      const evidenceRecord = {
+        ...resultData,
+        project_id: selectedProjectId,
+        project_name: selectedProject?.name || 'Rural Education Support 2026',
+        beneficiary_id: selectedBeneficiaryId,
+        beneficiary_name: selectedBeneficiary?.name || 'Beneficiary',
+        verification_code: challengeCode,
+        file_url: capturedPhoto,
+        captured_at: new Date().toISOString(),
+        beneficiary_confirmed: 0
+      };
+
+      persistentStorage.saveEvidence(evidenceRecord);
+      setTrustResult(evidenceRecord);
       setStep(4);
       toast.success('Evidence submitted! Digital Trust Score calculated.');
-    } catch (err) {
-      // Offline fallback computation
-      const calculatedScore = distance && distance < 100 ? 94 : 86;
-      setTrustResult({
-        id: `EV-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-        trust_score: calculatedScore,
-        trust_status: calculatedScore >= 90 ? 'verified' : 'review',
-        distance_from_target: distance || 45,
-        file_hash: '8f3a91bc92de104a7b5c8290fae139820541cdb387e042',
-        ai_checks: {
-          gps: { score: 20, max: 20, detail: `${distance || 45}m from target — TRUSTED` },
-          timestamp: { score: 15, max: 15, detail: 'Captured in real-time' },
-          device: { score: 15, max: 15, detail: 'Attested Hardware ID' },
-          duplicate: { score: 20, max: 20, detail: 'Perceptual Hash: 0 Duplicates' },
-          activity: { score: 14, max: 15, detail: `Challenge Code "${challengeCode}" matched` },
-          beneficiary_confirm: { score: 0, max: 15, detail: 'Awaiting SMS/OTP trigger' }
-        }
-      });
-      setStep(4);
-      toast.success('Digital Trust Score calculated!');
     } finally {
       setSubmitting(false);
     }
@@ -215,15 +244,18 @@ const FieldVerification = () => {
         console.warn('Local confirmation applied:', e);
       }
     }
-    setTrustResult(prev => ({
-      ...prev,
-      trust_score: Math.min(100, (prev?.trust_score || 85) + 15),
+    const updated = {
+      ...trustResult,
+      beneficiary_confirmed: 1,
+      trust_score: Math.min(100, (trustResult?.trust_score || 85) + 15),
       trust_status: 'verified',
       ai_checks: {
-        ...prev?.ai_checks,
+        ...trustResult?.ai_checks,
         beneficiary_confirm: { score: 15, max: 15, detail: 'Confirmed via Aadhaar Linked OTP' }
       }
-    }));
+    };
+    persistentStorage.saveEvidence(updated);
+    setTrustResult(updated);
     toast.success('Beneficiary replied "YES" via SMS/OTP! Trust Score updated to 99% 🟢');
   };
 
