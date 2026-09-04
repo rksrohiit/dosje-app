@@ -33,11 +33,33 @@ jobs:
 
       - name: Run Backend Integration Tests
         run: |
-          node index.js &
+          # Start server with output redirected to prevent GHA from hanging
+          node index.js > server.log 2>&1 &
           SERVER_PID=$!
-          trap "kill $SERVER_PID 2>/dev/null" EXIT
-          sleep 3
+
+          # Wait for server to be ready (up to 30s)
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:5000/api/dashboard/health > /dev/null 2>&1; then
+              echo "✅ Server is ready (took ${i}s)"
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "❌ Server failed to start. Logs:"
+              cat server.log
+              kill $SERVER_PID 2>/dev/null || true
+              exit 1
+            fi
+            sleep 1
+          done
+
+          # Run tests
           node test-api.js
+          TEST_EXIT=$?
+
+          # Cleanup
+          kill $SERVER_PID 2>/dev/null || true
+          wait $SERVER_PID 2>/dev/null || true
+          exit $TEST_EXIT
         working-directory: server
         env:
           PORT: 5000
