@@ -11,6 +11,7 @@ jobs:
   test-server:
     name: Test Backend API
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - uses: actions/checkout@v4
@@ -34,9 +35,9 @@ jobs:
         run: |
           node index.js &
           SERVER_PID=$!
+          trap "kill $SERVER_PID 2>/dev/null" EXIT
           sleep 3
           node test-api.js
-          kill $SERVER_PID
         working-directory: server
         env:
           PORT: 5000

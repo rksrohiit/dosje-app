@@ -52,7 +52,9 @@ async function runTests() {
   console.log('🎉 ALL CI TESTS PASSED SUCCESSFULLY!');
 }
 
-runTests().catch(err => {
+runTests().then(() => {
+  process.exit(0);
+}).catch(err => {
   console.error('❌ CI TEST FAILED:', err.message);
   process.exit(1);
 });
