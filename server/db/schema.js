@@ -18,7 +18,7 @@ function initDB() {
       name TEXT,
       email TEXT UNIQUE,
       password TEXT,
-      role TEXT CHECK( role IN('admin','pmu','ngo','beneficiary') ),
+      role TEXT CHECK( role IN('admin','pmu','ngo','beneficiary','field_worker') ),
       ngo_id TEXT,
       created_at TEXT
     );
@@ -119,6 +119,75 @@ function initDB() {
       description TEXT,
       budget REAL,
       beneficiary_count INTEGER
+    );
+
+    CREATE TABLE IF NOT EXISTS projects (
+      id TEXT PRIMARY KEY,
+      ngo_id TEXT,
+      name TEXT,
+      description TEXT,
+      location TEXT,
+      state TEXT,
+      district TEXT,
+      lat REAL,
+      lng REAL,
+      beneficiary_target INTEGER DEFAULT 0,
+      budget REAL DEFAULT 0,
+      start_date TEXT,
+      end_date TEXT,
+      status TEXT DEFAULT 'active',
+      scheme_id TEXT,
+      created_at TEXT,
+      FOREIGN KEY (ngo_id) REFERENCES ngos(id),
+      FOREIGN KEY (scheme_id) REFERENCES schemes(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS beneficiaries (
+      id TEXT PRIMARY KEY,
+      name TEXT,
+      guardian_name TEXT,
+      village TEXT,
+      district TEXT,
+      state TEXT,
+      phone TEXT,
+      aadhaar_last4 TEXT,
+      project_id TEXT,
+      ngo_id TEXT,
+      lat REAL,
+      lng REAL,
+      status TEXT DEFAULT 'pending',
+      services_received TEXT,
+      verification_count INTEGER DEFAULT 0,
+      last_verified_at TEXT,
+      created_at TEXT,
+      FOREIGN KEY (project_id) REFERENCES projects(id),
+      FOREIGN KEY (ngo_id) REFERENCES ngos(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS evidence (
+      id TEXT PRIMARY KEY,
+      project_id TEXT,
+      beneficiary_id TEXT,
+      worker_id TEXT,
+      type TEXT DEFAULT 'photo',
+      file_url TEXT,
+      file_hash TEXT,
+      gps_lat REAL,
+      gps_lng REAL,
+      gps_accuracy REAL,
+      device_id TEXT,
+      verification_code TEXT,
+      distance_from_target REAL,
+      trust_score INTEGER DEFAULT 0,
+      trust_status TEXT DEFAULT 'pending',
+      ai_checks TEXT,
+      beneficiary_confirmed INTEGER DEFAULT 0,
+      notes TEXT,
+      captured_at TEXT,
+      created_at TEXT,
+      FOREIGN KEY (project_id) REFERENCES projects(id),
+      FOREIGN KEY (beneficiary_id) REFERENCES beneficiaries(id),
+      FOREIGN KEY (worker_id) REFERENCES users(id)
     );
   `);
 

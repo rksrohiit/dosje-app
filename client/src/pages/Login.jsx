@@ -15,6 +15,7 @@ const Login = () => {
     { label: '🔑 Admin (DoSJE)', email: 'admin@dosje.gov.in', password: 'Admin@123' },
     { label: '🔍 PMU Inspector', email: 'inspector@pmu.gov.in', password: 'Pmu@123' },
     { label: '🏢 NGO Manager', email: 'manager@ngo1.org', password: 'Ngo@123' },
+    { label: '🔧 Field Worker', email: 'worker@ngo1.org', password: 'Worker@123' },
     { label: '👤 Beneficiary', email: 'beneficiary@test.com', password: 'Ben@123' },
   ];
 
@@ -30,9 +31,18 @@ const Login = () => {
 
     setIsLoading(true);
     try {
-      await login(targetEmail, targetPass);
+      const resData = await login(targetEmail, targetPass);
       toast.success('Login successful!');
-      navigate('/');
+      const role = resData?.user?.role;
+      if (role === 'ngo') {
+        navigate('/ngo-dashboard');
+      } else if (role === 'field_worker') {
+        navigate('/field-verification');
+      } else if (role === 'beneficiary') {
+        navigate('/beneficiary-portal');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Login error:', error);
       toast.error('Login failed. Please check credentials or backend server.');

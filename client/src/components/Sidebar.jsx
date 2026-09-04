@@ -11,21 +11,37 @@ import {
   Building2,
   LogOut,
   X,
-  MessageSquare
+  MessageSquare,
+  FolderKanban,
+  Users,
+  Layers,
+  FileCheck,
+  Award
 } from 'lucide-react';
 
 const Sidebar = ({ mobileOpen, setMobileOpen }) => {
   const { user, logout } = useAuth();
 
   const navItems = [
+    // Admin & PMU
     { path: '/', name: 'Dashboard', icon: LayoutDashboard, roles: ['admin', 'pmu'] },
     { path: '/cctv', name: 'Live CCTV Surveillance', icon: Camera, roles: ['admin', 'pmu'] },
     { path: '/video-conference', name: 'Video Conference', icon: Video, roles: ['admin', 'pmu', 'ngo'] },
-    { path: '/inspections', name: 'Inspection Module', icon: ClipboardCheck, roles: ['admin', 'pmu', 'ngo'] },
+    { path: '/inspections', name: 'Inspection Module', icon: ClipboardCheck, roles: ['admin', 'pmu'] },
     { path: '/reports', name: 'Inspection Reports', icon: FileText, roles: ['admin', 'pmu'] },
     { path: '/analytics', name: 'AI Analytics', icon: BarChart2, roles: ['admin'] },
     { path: '/communications', name: 'Bot Alerts & Grants', icon: MessageSquare, roles: ['admin', 'pmu'] },
-    { path: '/ngo-portal', name: 'NGO Portal', icon: Building2, roles: ['ngo', 'beneficiary'] },
+
+    // NGO & Field Worker
+    { path: '/ngo-dashboard', name: 'NGO Dashboard', icon: LayoutDashboard, roles: ['ngo', 'field_worker'] },
+    { path: '/projects', name: 'My Projects', icon: FolderKanban, roles: ['ngo', 'admin'] },
+    { path: '/beneficiaries', name: 'Beneficiaries', icon: Users, roles: ['ngo', 'field_worker', 'admin'] },
+    { path: '/field-verification', name: 'Field Verification', icon: Camera, roles: ['ngo', 'field_worker'] },
+    { path: '/evidence', name: 'Evidence Vault', icon: Layers, roles: ['ngo', 'field_worker', 'admin', 'pmu'] },
+    { path: '/ngo-portal', name: 'Compliance & Docs', icon: FileCheck, roles: ['ngo'] },
+
+    // Beneficiary
+    { path: '/beneficiary-portal', name: 'My Application Status', icon: Award, roles: ['beneficiary'] },
   ];
 
   const visibleNavItems = navItems.filter(item => item.roles.includes(user?.role || 'admin'));

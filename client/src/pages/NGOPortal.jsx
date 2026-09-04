@@ -56,13 +56,13 @@ const NGOPortal = () => {
       <div className="bg-gradient-to-r from-blue-900 via-slate-900 to-indigo-900 rounded-2xl p-5 md:p-6 text-white shadow-lg border border-blue-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30 uppercase tracking-widest">
-            NGO Grantee Management Portal
+            Statutory Compliance & UC Filing
           </span>
           <h1 className="text-xl md:text-2xl font-black text-white mt-1">
             {user?.name ? `${user.name}'s Institute` : 'Delhi NGO - SMILE Scheme'}
           </h1>
           <p className="text-xs text-slate-300 mt-1">
-            Scheme: Support for Marginalized Individuals for Livelihood and Enterprise
+            Utilization Certificates (UC), biometric staff registers, and daily aggregate attendance audits.
           </p>
         </div>
 

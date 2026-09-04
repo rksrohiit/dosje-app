@@ -48,6 +48,7 @@ export const AuthProvider = ({ children }) => {
         'inspector@pmu.gov.in': { role: 'pmu', name: 'Priya Sharma', ngo_id: null },
         'manager@ngo1.org': { role: 'ngo', name: 'Suresh Patel', ngo_id: 'ngo1' },
         'beneficiary@test.com': { role: 'beneficiary', name: 'Anita Devi', ngo_id: 'ngo1' },
+        'worker@ngo1.org': { role: 'field_worker', name: 'Ramesh Yadav', ngo_id: 'ngo1' },
       };
       const info = roleMap[email] || { role: 'admin', name: email.split('@')[0], ngo_id: null };
       resData = {

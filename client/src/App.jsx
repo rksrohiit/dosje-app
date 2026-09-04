@@ -17,6 +17,20 @@ import Reports from './pages/Reports';
 import Analytics from './pages/Analytics';
 import NGOPortal from './pages/NGOPortal';
 import CommunicationHub from './pages/CommunicationHub';
+import NGODashboard from './pages/NGODashboard';
+import ProjectManagement from './pages/ProjectManagement';
+import BeneficiaryManagement from './pages/BeneficiaryManagement';
+import FieldVerification from './pages/FieldVerification';
+import EvidenceGallery from './pages/EvidenceGallery';
+import BeneficiaryPortal from './pages/BeneficiaryPortal';
+
+const HomeRoute = () => {
+  const { user } = useAuth();
+  if (user?.role === 'ngo') return <Navigate to="/ngo-dashboard" replace />;
+  if (user?.role === 'field_worker') return <Navigate to="/field-verification" replace />;
+  if (user?.role === 'beneficiary') return <Navigate to="/beneficiary-portal" replace />;
+  return <Layout><Dashboard /></Layout>;
+};
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -58,7 +72,7 @@ function AppRoutes() {
         path="/"
         element={
           <PrivateRoute>
-            <Layout><Dashboard /></Layout>
+            <HomeRoute />
           </PrivateRoute>
         }
       />
@@ -115,6 +129,54 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Layout><NGOPortal /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/ngo-dashboard"
+        element={
+          <PrivateRoute>
+            <Layout><NGODashboard /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/projects"
+        element={
+          <PrivateRoute>
+            <Layout><ProjectManagement /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/beneficiaries"
+        element={
+          <PrivateRoute>
+            <Layout><BeneficiaryManagement /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/field-verification"
+        element={
+          <PrivateRoute>
+            <Layout><FieldVerification /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/evidence"
+        element={
+          <PrivateRoute>
+            <Layout><EvidenceGallery /></Layout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/beneficiary-portal"
+        element={
+          <PrivateRoute>
+            <Layout><BeneficiaryPortal /></Layout>
           </PrivateRoute>
         }
       />

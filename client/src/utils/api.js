@@ -61,6 +61,26 @@ export const api = {
     markAlertRead: (id) => apiInstance.put(`/analytics/alerts/${id}/read`),
     getOverview: () => apiInstance.get('/analytics/overview'),
   },
+  projects: {
+    getAll: () => apiInstance.get('/projects'),
+    getById: (id) => apiInstance.get(`/projects/${id}`),
+    create: (data) => apiInstance.post('/projects', data),
+    update: (id, data) => apiInstance.put(`/projects/${id}`, data),
+  },
+  beneficiaries: {
+    getAll: (params) => apiInstance.get('/beneficiaries', { params }),
+    getById: (id) => apiInstance.get(`/beneficiaries/${id}`),
+    getMyStatus: () => apiInstance.get('/beneficiaries/my-status'),
+    register: (data) => apiInstance.post('/beneficiaries', data),
+    verify: (id, data) => apiInstance.put(`/beneficiaries/${id}/verify`, data),
+  },
+  evidence: {
+    getAll: (params) => apiInstance.get('/evidence', { params }),
+    getStats: () => apiInstance.get('/evidence/stats'),
+    getChallenge: () => apiInstance.get('/evidence/challenge'),
+    submit: (data) => apiInstance.post('/evidence', data),
+    confirm: (id) => apiInstance.put(`/evidence/${id}/confirm`),
+  },
 };
 
 export default api;

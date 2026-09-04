@@ -43,12 +43,15 @@ initSocket(io);
 app.use((req, res, next) => { req.io = io; next(); });
 
 // ─── Routes ───────────────────────────────────────────────────────────────
-app.use('/api/auth',        require('./routes/auth'));
-app.use('/api/ngos',        require('./routes/ngos'));
-app.use('/api/inspections', require('./routes/inspections'));
-app.use('/api/reports',     require('./routes/reports'));
-app.use('/api/analytics',   require('./routes/analytics'));
-app.use('/api/dashboard',   require('./routes/dashboard'));
+app.use('/api/auth',          require('./routes/auth'));
+app.use('/api/ngos',          require('./routes/ngos'));
+app.use('/api/inspections',   require('./routes/inspections'));
+app.use('/api/reports',       require('./routes/reports'));
+app.use('/api/analytics',     require('./routes/analytics'));
+app.use('/api/dashboard',     require('./routes/dashboard'));
+app.use('/api/projects',      require('./routes/projects'));
+app.use('/api/beneficiaries', require('./routes/beneficiaries'));
+app.use('/api/evidence',      require('./routes/evidence'));
 
 // ─── Global Error Handler ─────────────────────────────────────────────────
 app.use((err, req, res, next) => {
