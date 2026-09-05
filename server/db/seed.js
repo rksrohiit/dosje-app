@@ -177,6 +177,7 @@ function seed() {
 
 if (require.main === module) {
   seed();
+  process.exit(0);
 }
 
 module.exports = { seed };

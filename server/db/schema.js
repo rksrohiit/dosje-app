@@ -190,17 +190,6 @@ function initDB() {
       FOREIGN KEY (worker_id) REFERENCES users(id)
     );
   `);
-
-  // Auto-seed if empty (e.g. cold start in serverless environment)
-  const userCount = db.prepare('SELECT COUNT(*) as c FROM users').get().c;
-  if (userCount === 0) {
-    try {
-      const { seed } = require('./seed');
-      seed();
-    } catch (e) {
-      console.log('Auto-seed skipped or failed:', e.message);
-    }
-  }
 }
 
 module.exports = { db, initDB };

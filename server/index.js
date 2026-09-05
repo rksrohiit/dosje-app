@@ -30,6 +30,18 @@ app.get('/api/dashboard/health', (req, res) => {
 
 // ─── DB + Socket Init ─────────────────────────────────────────────────────
 initDB();
+
+// Auto-seed if DB is empty (e.g. cold start in serverless/cloud)
+try {
+  const userCount = require('./db/schema').db.prepare('SELECT COUNT(*) as c FROM users').get().c;
+  if (userCount === 0) {
+    const { seed } = require('./db/seed');
+    seed();
+    console.log('Auto-seeded empty database');
+  }
+} catch (e) {
+  console.log('Auto-seed skipped:', e.message);
+}
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? '*'
   : ['http://localhost:5173', 'http://localhost:3000'];
