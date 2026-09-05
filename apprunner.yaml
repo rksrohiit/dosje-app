@@ -3,11 +3,8 @@ runtime: nodejs20
 build:
   commands:
     build:
-      # 1. Install dependencies for client, server, and root
-      - npm --prefix client ci
-      - npm --prefix client run build
+      # 1. Install dependencies for server only
       - npm --prefix server ci
-      - npm install
 run:
   command: node server/index.js
   network:
