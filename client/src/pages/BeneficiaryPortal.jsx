@@ -34,47 +34,48 @@ const BeneficiaryPortal = () => {
         if (res.data && res.data.id) {
           setData(res.data);
         } else {
-          // Fallback PM-AJAY simulated data for Anita Devi
-          setData({
-            id: 'BEN-1001',
-            name: user?.name || 'Anita Devi',
-            guardian_name: 'Ram Prasad',
-            village: 'Dwarka Sector 12',
-            district: 'South West Delhi',
-            state: 'Delhi',
-            phone: '9876543201',
-            aadhaar_last4: '4523',
-            project_name: 'Rural Education Support 2026 (PM-AJAY)',
-            ngo_name: 'Delhi NGO Foundation',
-            status: 'verified',
-            verification_count: 3,
-            last_verified_at: '2026-08-28T10:30:00Z',
-            current_stage: 4, // 1 to 5
-            services_received: ['Educational Books Kit', 'School Uniforms (2 Sets)', 'Mid-Day Nutrition Support'],
-            evidence_history: [
-              {
-                id: 'EV-001',
-                captured_at: '2026-08-28T10:30:00Z',
-                service: 'Educational Books & Uniform Kit',
-                worker_name: 'Ramesh Yadav',
-                trust_score: 95,
-                trust_status: 'verified',
-                beneficiary_confirmed: 1
-              },
-              {
-                id: 'EV-003',
-                captured_at: '2026-08-15T11:15:00Z',
-                service: 'Mid-Day Meal Verification',
-                worker_name: 'Ramesh Yadav',
-                trust_score: 92,
-                trust_status: 'verified',
-                beneficiary_confirmed: 1
-              }
-            ]
-          });
+          throw new Error("No data returned");
         }
       } catch (err) {
         console.warn('Using seeded beneficiary portal status:', err);
+        // Fallback PM-AJAY simulated data for Anita Devi
+        setData({
+          id: 'BEN-1001',
+          name: user?.name || 'Anita Devi',
+          guardian_name: 'Ram Prasad',
+          village: 'Dwarka Sector 12',
+          district: 'South West Delhi',
+          state: 'Delhi',
+          phone: '9876543201',
+          aadhaar_last4: '4523',
+          project_name: 'Rural Education Support 2026 (PM-AJAY)',
+          ngo_name: 'Delhi NGO Foundation',
+          status: 'verified',
+          verification_count: 3,
+          last_verified_at: '2026-08-28T10:30:00Z',
+          current_stage: 4, // 1 to 5
+          services_received: ['Educational Books Kit', 'School Uniforms (2 Sets)', 'Mid-Day Nutrition Support'],
+          evidence_history: [
+            {
+              id: 'EV-001',
+              captured_at: '2026-08-28T10:30:00Z',
+              service: 'Educational Books & Uniform Kit',
+              worker_name: 'Ramesh Yadav',
+              trust_score: 95,
+              trust_status: 'verified',
+              beneficiary_confirmed: 1
+            },
+            {
+              id: 'EV-003',
+              captured_at: '2026-08-15T11:15:00Z',
+              service: 'Mid-Day Meal Verification',
+              worker_name: 'Ramesh Yadav',
+              trust_score: 92,
+              trust_status: 'verified',
+              beneficiary_confirmed: 1
+            }
+          ]
+        });
       } finally {
         setLoading(false);
       }
@@ -82,6 +83,14 @@ const BeneficiaryPortal = () => {
 
     fetchStatus();
   }, [user]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+  }
 
   const handleConfirmReceipt = (received) => {
     setOtpPromptAnswered(true);
