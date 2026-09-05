@@ -77,7 +77,6 @@ const MobileCameraCapture = ({ onCapture, onClose }) => {
       <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
         {!capturedImage ? (
           <>
-          <>
             <video
               ref={videoRef}
               autoPlay
