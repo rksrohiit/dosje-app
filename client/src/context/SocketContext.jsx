@@ -14,10 +14,10 @@ export const SocketProvider = ({ children }) => {
   useEffect(() => {
     if (!user) return;
 
-    // Use current origin in production/deployed environment or fallback to localhost:5000 in dev
-    const socketUrl = process.env.NODE_ENV === 'production'
-      ? window.location.origin
-      : 'http://localhost:5000';
+    // Use external API URL if defined (e.g. from Netlify env vars), fallback to localhost
+    const socketUrl = import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace(/\/api\/?$/, '')
+      : (process.env.NODE_ENV === 'production' ? window.location.origin : 'http://localhost:5000');
 
     const newSocket = io(socketUrl, {
       reconnectionDelayMax: 5000,
