@@ -60,4 +60,28 @@ router.get('/overview', authenticate, (req, res) => {
   });
 });
 
+router.post('/broadcast', authenticate, (req, res) => {
+  const { recipient, message } = req.body;
+  const io = req.app.get('io');
+  const id = require('crypto').randomUUID();
+  
+  db.prepare('INSERT INTO alerts (id, type, message, severity, created_at) VALUES (?, ?, ?, ?, ?)').run(
+    id, 'broadcast', `[${recipient}] ${message}`, 'info', new Date().toISOString()
+  );
+  
+  const alertObj = { 
+    id, 
+    type: 'broadcast', 
+    message: `[${recipient}] ${message}`, 
+    severity: 'info', 
+    is_read: 0, 
+    created_at: new Date().toISOString() 
+  };
+  
+  if (io) io.emit('new_bot_log', alertObj);
+  if (io) io.emit('new_alert', alertObj);
+  
+  res.json({ success: true, alert: alertObj });
+});
+
 module.exports = router;

@@ -60,6 +60,7 @@ export const api = {
     getAlerts: (params) => apiInstance.get('/analytics/alerts', { params }),
     markAlertRead: (id) => apiInstance.put(`/analytics/alerts/${id}/read`),
     getOverview: () => apiInstance.get('/analytics/overview'),
+    dispatchBroadcast: (data) => apiInstance.post('/analytics/broadcast', data),
   },
   projects: {
     getAll: () => apiInstance.get('/projects'),

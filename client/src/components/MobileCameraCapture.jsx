@@ -77,14 +77,15 @@ const MobileCameraCapture = ({ onCapture, onClose }) => {
       <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
         {!capturedImage ? (
           <>
-            {hasCameraPermission ? (
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="min-w-full min-h-full object-cover"
-              ></video>
-            ) : (
+          <>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              className={`min-w-full min-h-full object-cover ${hasCameraPermission ? 'block' : 'hidden'}`}
+            ></video>
+            
+            {!hasCameraPermission && (
               <div className="text-center p-6 text-slate-400">
                 <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-3" />
                 <p className="text-sm">{error || "Initializing Camera Engine..."}</p>

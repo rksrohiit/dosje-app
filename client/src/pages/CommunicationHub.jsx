@@ -1,15 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MessageSquare, PhoneCall, Send, ShieldAlert, CheckCircle2, AlertOctagon, Lock, RefreshCw, Layers, Cpu, Copy, Terminal, Cloud, Sparkles, Code } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../utils/api';
 import OTPModal from '../components/OTPModal';
+import { useSocket } from '../context/SocketContext';
 
 const CommunicationHub = () => {
+  const { socket } = useSocket();
   const [activeTab, setActiveTab] = useState('bot_logs');
   const [recipient, setRecipient] = useState('NGO Directors (+91 98765 43210)');
   const [message, setMessage] = useState('DoSJE Alert: Surprise inspection scheduled today at 11:00 AM. Please keep CCTV active.');
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [selectedGrantAction, setSelectedGrantAction] = useState(null);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handleNewBotLog = (alert) => {
+      const newLog = {
+        id: alert.id,
+        channel: 'WhatsApp & SMS',
+        phone: 'Broadcast',
+        name: 'Broadcast Group',
+        msg: alert.message,
+        status: 'DELIVERED',
+        time: 'Just now'
+      };
+      setBotLogs(prev => [newLog, ...prev]);
+    };
+    socket.on('new_bot_log', handleNewBotLog);
+    return () => socket.off('new_bot_log', handleNewBotLog);
+  }, [socket]);
 
   const [botLogs, setBotLogs] = useState([
     { id: 1, channel: 'WhatsApp', phone: '+91 98765 43210', name: 'Delhi NGO Director', msg: 'DoSJE Bot: High attendance discrepancy detected (80 reported vs 50 verified).', status: 'DELIVERED', time: '10 mins ago' },
@@ -24,20 +44,16 @@ const CommunicationHub = () => {
     { ngo_id: 'ngo4', ngo_name: 'Kolkata Care', scheme: 'SMILE', score: 72, status: 'UNDER_REVIEW', amount: '₹25,00,000', reason: 'Manual Review Required: Pending audit clarification.' },
   ]);
 
-  const handleSendBroadcast = (e) => {
+  const handleSendBroadcast = async (e) => {
     e.preventDefault();
-    const newLog = {
-      id: Date.now(),
-      channel: 'WhatsApp & SMS',
-      phone: '+91 98765 43210',
-      name: 'Broadcast Group',
-      msg: message,
-      status: 'DELIVERED',
-      time: 'Just now'
-    };
-    setBotLogs([newLog, ...botLogs]);
-    toast.success('WhatsApp & SMS Broadcast Dispatched via Twilio Bot API!');
-    setMessage('');
+    try {
+      await api.analytics.dispatchBroadcast({ recipient, message });
+      toast.success('WhatsApp & SMS Broadcast Dispatched via Server!');
+      setMessage('');
+    } catch (err) {
+      console.error(err);
+      toast.error('Failed to dispatch broadcast');
+    }
   };
 
   const handleTriggerGrantRelease = (grant) => {
@@ -102,18 +118,6 @@ const CommunicationHub = () => {
         >
           <AlertOctagon className="w-4 h-4 text-emerald-600" />
           Automated Grant Installment Hold/Release Trigger
-        </button>
-
-        <button
-          onClick={() => setActiveTab('mcp_protocol')}
-          className={`px-5 py-3 font-bold text-xs md:text-sm transition-all border-b-2 flex items-center gap-2 ${
-            activeTab === 'mcp_protocol'
-              ? 'border-purple-600 text-purple-700'
-              : 'border-transparent text-slate-500 hover:text-slate-800'
-          }`}
-        >
-          <Cpu className="w-4 h-4 text-purple-600" />
-          Model Context Protocol (MCP) Integration
         </button>
       </div>
 
@@ -191,45 +195,59 @@ const CommunicationHub = () => {
             </div>
           </div>
         </div>
-      ) : activeTab === 'grant_workflow' ? (
+      ) : activeTab === 'grant_workflow' && (
         /* Grant Installment Hold/Release Trigger Table */
         <div className="bg-white rounded-2xl shadow-xs border border-slate-200 p-5 md:p-6 space-y-4">
           <div>
             <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <AlertOctagon className="w-5 h-5 text-emerald-600" />
-              Automated Financial Grant Hold & Release Workflow
+              Automated Grant Installment Hold/Release Trigger
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Automated rules: Score &ge; 80% &rarr; <strong>RELEASE APPROVED</strong> | Score &lt; 60% or High Anomaly &rarr; <strong>AUTOMATED HOLD (FROZEN)</strong>
+            <p className="text-sm text-slate-600 mt-1 pl-7">
+              Grant installments are automatically frozen via 2FA protocols when AI Trust Scores drop below 60%.
             </p>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[650px]">
-              <thead>
-                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] font-bold tracking-wider">
-                  <th className="p-3.5">NGO / Institute</th>
+          <div className="overflow-x-auto rounded-xl border border-slate-200">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold">
+                <tr>
+                  <th className="p-3.5">NGO Name</th>
                   <th className="p-3.5">Scheme</th>
-                  <th className="p-3.5">Compliance Score</th>
-                  <th className="p-3.5">Installment Amount</th>
-                  <th className="p-3.5">Status Decision</th>
+                  <th className="p-3.5">Trust Score</th>
+                  <th className="p-3.5">System Reason</th>
+                  <th className="p-3.5">Action Status</th>
                   <th className="p-3.5">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs md:text-sm">
-                {grants.map((grant) => (
-                  <tr key={grant.ngo_id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-3.5 font-bold text-slate-900">{grant.ngo_name}</td>
-                    <td className="p-3.5 font-semibold text-slate-600">{grant.scheme}</td>
-                    <td className="p-3.5 font-bold text-slate-800">{grant.score}%</td>
-                    <td className="p-3.5 font-mono font-bold text-slate-900">{grant.amount}</td>
+              <tbody className="divide-y divide-slate-100">
+                {grants.map((grant, i) => (
+                  <tr key={i} className="hover:bg-slate-50/50 transition">
+                    <td className="p-3.5 font-bold text-slate-800">{grant.ngo_name}</td>
                     <td className="p-3.5">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
-                        grant.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : (
-                          grant.status === 'FROZEN' ? 'bg-rose-100 text-rose-800 border border-rose-300' : 'bg-amber-100 text-amber-800 border border-amber-300'
+                      <span className="bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded text-xs">{grant.scheme}</span>
+                    </td>
+                    <td className="p-3.5">
+                      <div className="flex items-center gap-2">
+                        <div className="w-16 h-2 bg-slate-200 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${grant.score >= 70 ? 'bg-emerald-500' : 'bg-red-500'}`}
+                            style={{ width: `${grant.score}%` }}
+                          ></div>
+                        </div>
+                        <span className="font-bold text-xs">{grant.score}%</span>
+                      </div>
+                    </td>
+                    <td className="p-3.5 text-xs text-slate-500 max-w-xs truncate" title={grant.reason}>
+                      {grant.reason}
+                    </td>
+                    <td className="p-3.5">
+                      <span className={`text-xs font-bold px-2 py-1 rounded-md ${
+                        grant.status === 'APPROVED' ? 'bg-emerald-100 text-emerald-700' : (
+                          grant.status === 'FROZEN' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
                         )
                       }`}>
-                        {grant.status === 'APPROVED' ? '✅ RELEASE APPROVED' : (grant.status === 'FROZEN' ? '❄️ GRANT FROZEN' : '⏳ UNDER REVIEW')}
+                        {grant.status === 'APPROVED' ? '✅ RELEASE APPROVED' : (grant.status === 'FROZEN' ? '🚨 GRANT FROZEN' : '⏳ UNDER REVIEW')}
                       </span>
                     </td>
                     <td className="p-3.5">
@@ -250,115 +268,6 @@ const CommunicationHub = () => {
                 ))}
               </tbody>
             </table>
-          </div>
-        </div>
-      ) : (
-        /* MCP Protocol Tab */
-        <div className="space-y-6">
-          {/* Status Header */}
-          <div className="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 rounded-2xl p-6 text-white border border-purple-800/40 shadow-lg">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded text-[10px] font-extrabold bg-purple-500/20 text-purple-300 border border-purple-500/30 uppercase tracking-widest">
-                    Model Context Protocol (MCP) Server
-                  </span>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                    🟢 Live & Connected
-                  </span>
-                </div>
-                <h2 className="text-xl font-black text-white">AI Agent Tool & Context Bridge</h2>
-                <p className="text-xs text-slate-300 max-w-2xl">
-                  Connect any AI assistant (Claude Desktop, Cursor, Antigravity, or custom LLM agents) to live DoSJE databases, 6-signal Trust Engine, and real-time field audit records via JSON-RPC.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    const config = JSON.stringify({
-                      mcpServers: {
-                        "dosje-monitoring": {
-                          command: "node",
-                          args: ["server/mcp/index.js"],
-                          env: { NODE_ENV: "development" }
-                        }
-                      }
-                    }, null, 2);
-                    navigator.clipboard.writeText(config);
-                    toast.success('MCP Config JSON copied to clipboard!');
-                  }}
-                  className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl transition shadow flex items-center gap-1.5"
-                >
-                  <Copy className="w-3.5 h-3.5" /> Copy MCP Config
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Transport Endpoints */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                <Terminal className="w-4 h-4 text-purple-600" />
-                <span>1. Local Stdio Transport</span>
-                <span className="ml-auto text-[10px] font-mono bg-purple-50 text-purple-700 px-2 py-0.5 rounded">CLI / Local IDEs</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Direct standard input/output execution for local agent workflows (Cursor, Claude Desktop, Antigravity).
-              </p>
-              <div className="p-3 bg-slate-900 rounded-xl text-slate-200 font-mono text-xs overflow-x-auto">
-                <code>node server/mcp/index.js</code>
-              </div>
-            </div>
-
-            <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
-              <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                <Cloud className="w-4 h-4 text-blue-600" />
-                <span>2. Remote SSE Cloud Transport (AWS / Render)</span>
-                <span className="ml-auto text-[10px] font-mono bg-blue-50 text-blue-700 px-2 py-0.5 rounded">HTTPS Server-Sent Events</span>
-              </div>
-              <p className="text-xs text-slate-600">
-                Enables remote AI models anywhere on the web to connect to your hosted Amazon Cloud or Render deployment.
-              </p>
-              <div className="p-3 bg-slate-900 rounded-xl text-amber-300 font-mono text-xs overflow-x-auto">
-                <code>{typeof window !== 'undefined' ? `${window.location.origin}/sse` : 'https://dosje-app.onrender.com/sse'}</code>
-              </div>
-            </div>
-          </div>
-
-          {/* Active MCP Tools Catalog */}
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div className="flex items-center gap-2">
-                <Code className="w-5 h-5 text-purple-600" />
-                <h3 className="text-base font-bold text-slate-900">Registered MCP Tools (8 Available)</h3>
-              </div>
-              <span className="text-xs text-purple-700 font-bold bg-purple-50 px-2.5 py-1 rounded-full">
-                Protocol: 2024-11-05
-              </span>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {[
-                { name: 'dosje_list_projects', desc: 'Queries active welfare schemes (SMILE, DAP, SHG), budgets, and progress.' },
-                { name: 'dosje_create_project', desc: 'Registers a new social welfare project with unique ID and coordinates.' },
-                { name: 'dosje_list_beneficiaries', desc: 'Searches beneficiaries with masked Aadhaar DPDP privacy.' },
-                { name: 'dosje_get_beneficiary_status', desc: 'Retrieves PM-AJAY 5-stage progress and verified entitlements ledger.' },
-                { name: 'dosje_query_field_evidence', desc: 'Inspects tamper-proof field photos, GPS proximity, and SHA-256 hashes.' },
-                { name: 'dosje_calculate_trust_score', desc: 'Runs the 6-signal Trust Engine (GPS, time, device, hash, code, OTP).' },
-                { name: 'dosje_get_compliance_stats', desc: 'Fetches national compliance leaderboard and attendance anomalies.' },
-                { name: 'dosje_trigger_ai_inspection', desc: 'Dispatches automated unannounced inspections based on risk score.' },
-              ].map((t, i) => (
-                <div key={i} className="p-3.5 rounded-xl border border-slate-200 hover:border-purple-300 transition space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    <strong className="font-mono text-xs text-purple-700 font-bold">{t.name}</strong>
-                  </div>
-                  <p className="text-xs text-slate-500 pl-4">{t.desc}</p>
-                </div>
-              ))}
-            </div>
           </div>
         </div>
       )}
